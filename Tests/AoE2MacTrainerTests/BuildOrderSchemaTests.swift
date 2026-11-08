@@ -3,13 +3,16 @@ import XCTest
 @testable import AoE2MacTrainer
 
 final class BuildOrderSchemaTests: XCTestCase {
-    private func makeBuild(civilizations: [String] = ["turks", "portuguese"],
-                           steps: [BuildStep] = [BuildStep(action: "Start", targetTimeSeconds: 0)]) -> BuildOrder {
-        BuildOrder(id: "fast-imperial", name: "Fast Imperial — gunpowder",
+    private func makeBuild(id: String = "fast-imperial", civilizations: [String] = ["turks", "portuguese"],
+                           steps: [BuildStep] = [BuildStep(action: "Start", targetTimeSeconds: 0)],
+                           strategyFamily: String? = nil,
+                           startingFoodRequirements: [StartingFoodRequirement]? = nil) -> BuildOrder {
+        BuildOrder(id: id, name: "Fast Imperial — gunpowder",
                    civilizations: civilizations, map: "Арена", strategy: "Fast Imperial",
                    description: "Test fixture, not a benchmark", steps: steps,
                    sources: [BuildSource(title: "Example source", url: "https://example.com/build")],
-                   planStatus: "practice-targets")
+                   planStatus: "practice-targets", strategyFamily: strategyFamily,
+                   startingFoodRequirements: startingFoodRequirements)
     }
 
     private func declarations(_ ids: [String] = ["turks", "portuguese"]) throws -> [CivilizationDefinition] {
@@ -30,6 +33,14 @@ final class BuildOrderSchemaTests: XCTestCase {
         var dictionary = try XCTUnwrap(object as? [String: Any])
         try change(&dictionary)
         return try JSONSerialization.data(withJSONObject: dictionary)
+    }
+
+    private func documentWithFoodRequirements(_ value: Any) throws -> Data {
+        try mutatedDocument { dictionary in
+            var builds = try XCTUnwrap(dictionary["builds"] as? [[String: Any]])
+            builds[0]["startingFoodRequirements"] = value
+            dictionary["builds"] = builds
+        }
     }
 
     private func assertUnknownKey(_ data: Data, key: String, path: String,
@@ -139,15 +150,21 @@ final class BuildOrderSchemaTests: XCTestCase {
     }
 
     func testStepSelectorsMustBeArrays() throws {
+        let invalidValues: [Any] = ["turks", NSNull()]
         for selector in ["includeOnly", "exclude"] {
-            let data = try mutatedDocument { dictionary in
-                var builds = try XCTUnwrap(dictionary["builds"] as? [[String: Any]])
-                var steps = try XCTUnwrap(builds[0]["steps"] as? [[String: Any]])
-                steps[0][selector] = "turks"
-                builds[0]["steps"] = steps
-                dictionary["builds"] = builds
+            for invalid in invalidValues {
+                let data = try mutatedDocument { dictionary in
+                    var builds = try XCTUnwrap(dictionary["builds"] as? [[String: Any]])
+                    var steps = try XCTUnwrap(builds[0]["steps"] as? [[String: Any]])
+                    steps[0][selector] = invalid
+                    builds[0]["steps"] = steps
+                    dictionary["builds"] = builds
+                }
+                XCTAssertThrowsError(try BuildOrderLibrary.decode(data)) { error in
+                    XCTAssertTrue(error.localizedDescription.contains(selector))
+                    XCTAssertTrue(error.localizedDescription.contains("массивом"))
+                }
             }
-            XCTAssertThrowsError(try BuildOrderLibrary.decode(data))
         }
     }
 
@@ -228,6 +245,145 @@ final class BuildOrderSchemaTests: XCTestCase {
         builds[0]["steps"] = steps
         let data = try JSONSerialization.data(withJSONObject: builds)
         XCTAssertEqual(try BuildOrderLibrary.decode(data), [makeBuild()])
+    }
+
+    func testFoodMetadataRoundTripsAndSurvivesCivilizationResolution() throws {
+        let requirements = [StartingFoodRequirement(kind: .pushableHunt, minCount: 3)]
+        let build = makeBuild(strategyFamily: "fast-castle", startingFoodRequirements: requirements)
+        let decoded = try XCTUnwrap(BuildOrderLibrary.decode(documentData(builds: [build])).first)
+        XCTAssertEqual(decoded, build)
+        let resolved = try XCTUnwrap(decoded.resolved(for: "turks"))
+        XCTAssertEqual(resolved.strategyFamily, "fast-castle")
+        XCTAssertEqual(resolved.startingFoodRequirements, requirements)
+        XCTAssertEqual(resolved.civilizations, ["turks"])
+        XCTAssertTrue(decoded.supports(civilizationID: "turks"), "supports remains civilization-only")
+        XCTAssertTrue(BuildOrderLibrary.eligible([resolved], civilizationID: "turks").isEmpty,
+                      "Resolving a civilization must not erase food restrictions")
+    }
+
+    func testLegacyNormalizationPreservesFoodConditionsAndFamily() throws {
+        let requirements = [StartingFoodRequirement(kind: .smallGame, minCount: 2)]
+        let original = BuildOrder(id: "legacy-food", name: "Legacy", civilization: "Турки, Португальцы",
+                                  map: "Арена", strategy: "Fast Castle", description: "",
+                                  steps: [BuildStep(action: "Start")], strategyFamily: "fast-castle",
+                                  startingFoodRequirements: requirements)
+        let decoded = try XCTUnwrap(BuildOrderLibrary.decode(JSONEncoder().encode([original])).first)
+        XCTAssertEqual(decoded, original)
+        XCTAssertEqual(decoded.startingFoodRequirements, requirements)
+        XCTAssertTrue(BuildOrderLibrary.eligible([decoded], civilizationID: "turks").isEmpty)
+    }
+
+    func testFoodEligibilityKeepsGenericFallbackAndStillRequiresMatchingCivilization() throws {
+        let hunt: [StartingFoodRequirement] = [.init(kind: .pushableHunt, minCount: 3)]
+        let small: [StartingFoodRequirement] = [.init(kind: .smallGame, minCount: 2)]
+        let builds = [
+            makeBuild(id: "generic", strategyFamily: "fast-castle"),
+            makeBuild(id: "generic-empty", strategyFamily: "fast-castle", startingFoodRequirements: []),
+            makeBuild(id: "hunt", strategyFamily: "fast-castle", startingFoodRequirements: hunt),
+            makeBuild(id: "small", strategyFamily: "fast-castle", startingFoodRequirements: small),
+            makeBuild(id: "foreign-hunt", civilizations: ["franks"], strategyFamily: "fast-castle",
+                      startingFoodRequirements: hunt)
+        ]
+        try BuildOrderLibrary.validate(builds)
+        XCTAssertEqual(BuildOrderLibrary.eligible(builds, civilizationID: "turks").map(\.id),
+                       ["generic", "generic-empty"])
+        XCTAssertEqual(BuildOrderLibrary.eligible(builds, civilizationID: "turks",
+                                                  startingFoodEvidence: .init(pushableHuntCount: 2)).map(\.id),
+                       ["generic", "generic-empty"])
+        XCTAssertEqual(BuildOrderLibrary.eligible(builds, civilizationID: "turks",
+                                                  startingFoodEvidence: .init(pushableHuntCount: 3)).map(\.id),
+                       ["generic", "generic-empty", "hunt"])
+        XCTAssertEqual(BuildOrderLibrary.eligible(builds, civilizationID: "turks",
+                                                  startingFoodEvidence: .init(smallGameCount: 2)).map(\.id),
+                       ["generic", "generic-empty", "small"])
+        let both = StartingFoodEvidence(pushableHuntCount: 3, smallGameCount: 2)
+        XCTAssertEqual(BuildOrderLibrary.eligible(builds, civilizationID: "turks",
+                                                  startingFoodEvidence: both).map(\.id),
+                       ["generic", "generic-empty", "hunt", "small"])
+        XCTAssertTrue(BuildOrderLibrary.eligible(builds, civilizationID: nil, startingFoodEvidence: both).isEmpty)
+        XCTAssertTrue(BuildOrderLibrary.eligible(builds, civilizationID: "unknown", startingFoodEvidence: both).isEmpty)
+    }
+
+    func testStrategyFamilyMustBeNonemptyKebabID() throws {
+        for invalid in ["", " ", "Fast-Castle", "fast_castle", "-fast", "fast-", "fast--castle", "быстрый-замок"] {
+            XCTAssertThrowsError(try BuildOrderLibrary.validate([makeBuild(strategyFamily: invalid)])) { error in
+                XCTAssertTrue(error.localizedDescription.contains("strategyFamily"))
+            }
+        }
+        for valid in ["fast-castle", "fast-imperial", "fc", "phase-2"] {
+            XCTAssertNoThrow(try BuildOrderLibrary.validate([makeBuild(strategyFamily: valid)]))
+        }
+    }
+
+    func testFoodRequirementCountLimitsAndUniqueKinds() throws {
+        for count in [-1, 0, 33] {
+            XCTAssertThrowsError(try BuildOrderLibrary.validate([
+                makeBuild(startingFoodRequirements: [.init(kind: .pushableHunt, minCount: count)])
+            ])) { error in
+                XCTAssertTrue(error.localizedDescription.contains("startingFoodRequirements.minCount"))
+            }
+        }
+        XCTAssertThrowsError(try BuildOrderLibrary.validate([
+            makeBuild(startingFoodRequirements: [
+                .init(kind: .pushableHunt, minCount: 1), .init(kind: .pushableHunt, minCount: 3)
+            ])
+        ]))
+        XCTAssertNoThrow(try BuildOrderLibrary.validate([
+            makeBuild(startingFoodRequirements: [
+                .init(kind: .pushableHunt, minCount: 1), .init(kind: .smallGame, minCount: 32)
+            ])
+        ]))
+    }
+
+    func testUnknownFoodKindsAndNonnumericIntegerCountsAreRejected() throws {
+        for kind in ["deer", "Pushable-Hunt", "small_game", ""] {
+            let data = try documentWithFoodRequirements([["kind": kind, "minCount": 3] as [String: Any]])
+            XCTAssertThrowsError(try BuildOrderLibrary.decode(data))
+        }
+        let invalidCounts: [Any] = ["3", 1.5, true]
+        for count in invalidCounts {
+            let data = try documentWithFoodRequirements([["kind": "pushable-hunt", "minCount": count]])
+            XCTAssertThrowsError(try BuildOrderLibrary.decode(data))
+        }
+        XCTAssertThrowsError(try BuildOrderLibrary.decode(documentWithFoodRequirements([["kind": "small-game"]])))
+        XCTAssertThrowsError(try BuildOrderLibrary.decode(documentWithFoodRequirements("pushable-hunt")))
+    }
+
+    func testV2NullFoodAndFamilyFieldsAreNotSilentlyTreatedAsOmitted() throws {
+        XCTAssertThrowsError(try BuildOrderLibrary.decode(documentWithFoodRequirements(NSNull()))) { error in
+            XCTAssertTrue(error.localizedDescription.contains("startingFoodRequirements"))
+            XCTAssertTrue(error.localizedDescription.contains("массивом"))
+        }
+        let invalidValues: [Any] = [NSNull(), 123, ["fast-castle"]]
+        for invalid in invalidValues {
+            let data = try mutatedDocument { dictionary in
+                var builds = try XCTUnwrap(dictionary["builds"] as? [[String: Any]])
+                builds[0]["strategyFamily"] = invalid
+                dictionary["builds"] = builds
+            }
+            XCTAssertThrowsError(try BuildOrderLibrary.decode(data)) { error in
+                XCTAssertTrue(error.localizedDescription.contains("strategyFamily"))
+            }
+        }
+        XCTAssertNoThrow(try BuildOrderLibrary.decode(documentData()), "Omitted optional fields remain valid")
+        XCTAssertNoThrow(try BuildOrderLibrary.decode(documentWithFoodRequirements([Any]())),
+                         "An explicit empty array remains a generic plan")
+    }
+
+    func testUnknownFoodSelectorKeysAreRejectedAndCivSelectorsRemainCivOnly() throws {
+        let data = try documentWithFoodRequirements([
+            ["kind": "pushable-hunt", "minCount": 3, "exclude": ["small-game"]] as [String: Any]
+        ])
+        assertUnknownKey(data, key: "exclude", path: "$.builds[0].startingFoodRequirements[0]")
+        let typo = try mutatedDocument { dictionary in
+            var builds = try XCTUnwrap(dictionary["builds"] as? [[String: Any]])
+            builds[0]["foodRequirements"] = [["kind": "pushable-hunt", "minCount": 3] as [String: Any]]
+            dictionary["builds"] = builds
+        }
+        assertUnknownKey(typo, key: "foodRequirements", path: "$.builds[0]")
+        XCTAssertThrowsError(try BuildOrderLibrary.validate([
+            makeBuild(steps: [BuildStep(action: "Wrong selector type", includeOnly: ["small-game"])])
+        ]))
     }
 
     func testStepCannotReferenceCivilizationOutsideBuildAllowlist() throws {

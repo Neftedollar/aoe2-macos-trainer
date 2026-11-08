@@ -6,11 +6,13 @@ final class TrainerStateTests: XCTestCase {
     private enum FixtureError: Error { case unavailable }
 
     private func build(_ id: String, civilizations: [String],
-                       steps: [BuildStep]? = nil) -> BuildOrder {
+                       steps: [BuildStep]? = nil, family: String? = nil,
+                       food: [StartingFoodRequirement]? = nil) -> BuildOrder {
         BuildOrder(id: id, name: id, civilizations: civilizations, map: "Arena",
                    strategy: "Training", description: "State test fixture",
                    steps: steps ?? [BuildStep(action: "Start", targetTimeSeconds: 0),
-                                    BuildStep(action: "Next", targetTimeSeconds: 60)])
+                                    BuildStep(action: "Next", targetTimeSeconds: 60)],
+                   strategyFamily: family, startingFoodRequirements: food)
     }
 
     @MainActor
@@ -125,8 +127,11 @@ final class TrainerStateTests: XCTestCase {
         state.selectBuild(1)
         state.next()
         state.selectPreviewCivilization("portuguese")
-        XCTAssertEqual(state.selectedBuild?.id, "port", "Unsupported old selection must not survive")
+        XCTAssertNil(state.selectedBuild, "An unrelated legacy plan must not silently replace intent")
+        XCTAssertEqual(state.requestedBuildID, "armenian")
         XCTAssertEqual(state.stepIndex, 0)
+        state.cycleBuild()
+        XCTAssertEqual(state.selectedBuild?.id, "port", "Explicit cycling can choose another eligible plan")
     }
 
     @MainActor
@@ -157,12 +162,17 @@ final class TrainerStateTests: XCTestCase {
         let invalid = [build("bad", civilizations: ["not-a-civilization"])]
         let state = TrainerState(builds: initial, loader: { invalid })
         state.selectPreviewCivilization("portuguese")
+        let evidence = StartingFoodEvidence(pushableHuntCount: 3, smallGameCount: 2)
+        state.updatePreviewFoodEvidence(evidence)
         state.next()
         let visibleBefore = state.builds
         XCTAssertThrowsError(try state.reloadBuilds())
         XCTAssertEqual(state.catalog, initial)
         XCTAssertEqual(state.builds, visibleBefore)
         XCTAssertEqual(state.previewCivilizationID, "portuguese")
+        XCTAssertEqual(state.previewFoodEvidence, evidence)
+        XCTAssertEqual(state.requestedBuildID, "port")
+        XCTAssertEqual(state.requestedStrategyFamily, "port")
         XCTAssertEqual(state.selectedBuild?.id, "port")
         XCTAssertEqual(state.stepIndex, 1)
         XCTAssertNotNil(state.loadErrorMessage)
@@ -208,5 +218,238 @@ final class TrainerStateTests: XCTestCase {
         XCTAssertNotNil(state.loadErrorMessage)
         XCTAssertTrue(state.catalog.isEmpty)
         XCTAssertNil(state.selectedBuild)
+    }
+
+    @MainActor
+    func testFoodDiscoveryAddsVariantsWithoutReplacingSelectedBuildOrStep() {
+        let catalog = [
+            build("fc-deer", civilizations: ["portuguese"], family: "fast-castle",
+                  food: [StartingFoodRequirement(kind: .pushableHunt, minCount: 3)]),
+            build("fc-mixed", civilizations: ["portuguese"], family: "fast-castle",
+                  food: [StartingFoodRequirement(kind: .pushableHunt, minCount: 3),
+                         StartingFoodRequirement(kind: .smallGame, minCount: 2)]),
+            build("fc-generic", civilizations: ["portuguese"], family: "fast-castle"),
+            build("fi-generic", civilizations: ["portuguese"], family: "fast-imperial")
+        ]
+        let state = TrainerState(builds: catalog)
+        state.selectPreviewCivilization("portuguese")
+        XCTAssertEqual(state.selectedBuild?.id, "fc-generic")
+        state.next()
+        state.updatePreviewFoodEvidence(StartingFoodEvidence(pushableHuntCount: 3))
+        XCTAssertEqual(state.builds.map(\.id), ["fc-deer", "fc-generic", "fi-generic"])
+        XCTAssertEqual(state.selectedBuild?.id, "fc-generic")
+        XCTAssertEqual(state.selectedBuildIndex, 1)
+        XCTAssertEqual(state.stepIndex, 1)
+
+        state.updatePreviewFoodEvidence(StartingFoodEvidence(pushableHuntCount: 3, smallGameCount: 2))
+        XCTAssertEqual(state.builds.map(\.id), ["fc-deer", "fc-mixed", "fc-generic", "fi-generic"])
+        XCTAssertEqual(state.selectedBuild?.id, "fc-generic")
+        XCTAssertEqual(state.stepIndex, 1)
+        XCTAssertEqual(state.catalog, catalog)
+    }
+
+    @MainActor
+    func testLowerManualFoodMakesRequestedPlanUnavailableWithoutSwitchingFamily() {
+        let state = TrainerState(builds: [
+            build("fi-first", civilizations: ["portuguese"], family: "fast-imperial"),
+            build("fc-deer", civilizations: ["portuguese"], family: "fast-castle",
+                  food: [StartingFoodRequirement(kind: .pushableHunt, minCount: 3)]),
+            build("fc-generic", civilizations: ["portuguese"], family: "fast-castle")
+        ])
+        state.updatePreviewFoodEvidence(StartingFoodEvidence(pushableHuntCount: 3))
+        state.selectPreviewCivilization("portuguese")
+        state.selectBuild(1)
+        state.next()
+        state.updatePreviewFoodEvidence(StartingFoodEvidence(pushableHuntCount: 2))
+        XCTAssertEqual(state.builds.map(\.id), ["fi-first", "fc-generic"])
+        XCTAssertNil(state.selectedBuild)
+        XCTAssertNil(state.selectedStep)
+        XCTAssertEqual(state.requestedBuildID, "fc-deer")
+        XCTAssertEqual(state.requestedStrategyFamily, "fast-castle")
+        XCTAssertEqual(state.unavailableRequestedBuild?.name, "fc-deer")
+        XCTAssertEqual(state.exportPreferredBuildID, "fc-deer")
+
+        state.next()
+        state.previous()
+        state.updatePreviewFoodEvidence(StartingFoodEvidence(pushableHuntCount: 3))
+        XCTAssertEqual(state.selectedBuild?.id, "fc-deer")
+        XCTAssertEqual(state.stepIndex, 1, "Re-qualifying the same plan should restore the saved step")
+    }
+
+    @MainActor
+    func testExplicitCycleCanLeaveUnavailableFamilyButDiscoveryCannotUndoIt() {
+        let state = TrainerState(builds: [
+            build("fc-deer", civilizations: ["portuguese"], family: "fast-castle",
+                  food: [StartingFoodRequirement(kind: .pushableHunt, minCount: 3)]),
+            build("fi-generic", civilizations: ["portuguese"], family: "fast-imperial")
+        ])
+        state.updatePreviewFoodEvidence(StartingFoodEvidence(pushableHuntCount: 3))
+        state.selectPreviewCivilization("portuguese")
+        XCTAssertEqual(state.selectedBuild?.id, "fc-deer")
+        state.updatePreviewFoodEvidence(.unknown)
+        XCTAssertNil(state.selectedBuild)
+        XCTAssertEqual(state.builds.map(\.id), ["fi-generic"])
+        state.cycleBuild()
+        state.next()
+        XCTAssertEqual(state.selectedBuild?.id, "fi-generic")
+        XCTAssertEqual(state.requestedStrategyFamily, "fast-imperial")
+        state.updatePreviewFoodEvidence(StartingFoodEvidence(pushableHuntCount: 6))
+        XCTAssertEqual(state.selectedBuild?.id, "fi-generic")
+        XCTAssertEqual(state.stepIndex, 1)
+    }
+
+    @MainActor
+    func testNewlyQualifiedPlanRequiresExplicitSelectionWhenNoIntentExists() {
+        let state = TrainerState(builds: [
+            build("fc-deer", civilizations: ["portuguese"], family: "fast-castle",
+                  food: [StartingFoodRequirement(kind: .pushableHunt, minCount: 3)])
+        ])
+        state.selectPreviewCivilization("portuguese")
+        XCTAssertTrue(state.builds.isEmpty)
+        XCTAssertNil(state.requestedBuildID)
+        state.updatePreviewFoodEvidence(StartingFoodEvidence(pushableHuntCount: 3))
+        XCTAssertEqual(state.builds.map(\.id), ["fc-deer"])
+        XCTAssertNil(state.selectedBuild)
+        state.cycleBuild()
+        XCTAssertEqual(state.selectedBuild?.id, "fc-deer")
+    }
+
+    @MainActor
+    func testFoodKindsRemainIndependentAndZeroDoesNotAssertAbsence() {
+        let state = TrainerState(builds: [
+            build("deer", civilizations: ["portuguese"],
+                  food: [StartingFoodRequirement(kind: .pushableHunt, minCount: 3)]),
+            build("small", civilizations: ["portuguese"],
+                  food: [StartingFoodRequirement(kind: .smallGame, minCount: 3)]),
+            build("generic", civilizations: ["portuguese"])
+        ])
+        state.selectPreviewCivilization("portuguese")
+        XCTAssertEqual(state.previewFoodEvidence, .unknown)
+        XCTAssertEqual(state.builds.map(\.id), ["generic"])
+        state.updatePreviewFoodEvidence(StartingFoodEvidence(smallGameCount: 3))
+        XCTAssertEqual(state.builds.map(\.id), ["small", "generic"])
+        state.updatePreviewFoodEvidence(StartingFoodEvidence(pushableHuntCount: 3))
+        XCTAssertEqual(state.builds.map(\.id), ["deer", "generic"])
+        state.updatePreviewFoodEvidence(.unknown)
+        XCTAssertEqual(state.builds.map(\.id), ["generic"])
+    }
+
+    @MainActor
+    func testCivilizationSwitchPreservesRequestedFamilyInsteadOfChoosingEarlierFI() {
+        let state = TrainerState(builds: [
+            build("port-fc", civilizations: ["portuguese"], family: "fast-castle"),
+            build("armenian-fi", civilizations: ["armenians"], family: "fast-imperial"),
+            build("armenian-fc", civilizations: ["armenians"], family: "fast-castle")
+        ])
+        state.selectPreviewCivilization("portuguese")
+        state.next()
+        state.selectPreviewCivilization("armenians")
+        XCTAssertEqual(state.selectedBuild?.id, "armenian-fc")
+        XCTAssertEqual(state.requestedStrategyFamily, "fast-castle")
+        XCTAssertEqual(state.stepIndex, 0)
+        XCTAssertTrue(state.selectionNotice?.contains("port-fc") ?? false)
+        XCTAssertTrue(state.selectionNotice?.contains("armenian-fc") ?? false)
+        XCTAssertTrue(state.selectionNotice?.contains("не подходит") ?? false)
+        state.updatePreviewFoodEvidence(StartingFoodEvidence(smallGameCount: 2))
+        XCTAssertNotNil(state.selectionNotice, "New food evidence must not hide a fallback explanation")
+        state.selectBuild(1)
+        XCTAssertNil(state.selectionNotice, "An explicit selection acknowledges the chosen plan")
+    }
+
+    @MainActor
+    func testUnconfirmedFoodVariantRemainsPendingAfterReloadOrCompatibleCivChange() throws {
+        let catalog = [
+            build("fc-deer", civilizations: ["portuguese", "turks"], family: "fast-castle",
+                  food: [StartingFoodRequirement(kind: .pushableHunt, minCount: 3)]),
+            build("fc-generic", civilizations: ["portuguese", "turks"], family: "fast-castle")
+        ]
+        let state = TrainerState(builds: catalog, loader: { catalog })
+        state.updatePreviewFoodEvidence(StartingFoodEvidence(pushableHuntCount: 3))
+        state.selectPreviewCivilization("portuguese")
+        XCTAssertEqual(state.selectedBuild?.id, "fc-deer")
+        state.updatePreviewFoodEvidence(.unknown)
+        XCTAssertNil(state.selectedBuild)
+
+        try state.reloadBuilds()
+        XCTAssertNil(state.selectedBuild, "Reload must not silently switch a food-pending request")
+        XCTAssertEqual(state.requestedBuildID, "fc-deer")
+        XCTAssertNil(state.selectionNotice)
+
+        state.selectPreviewCivilization("turks")
+        XCTAssertNil(state.selectedBuild, "Civ compatibility does not compensate for missing food evidence")
+        XCTAssertEqual(state.requestedBuildID, "fc-deer")
+        XCTAssertEqual(state.exportPreferredBuildID, "fc-deer")
+        XCTAssertEqual(state.builds.map(\.id), ["fc-generic"])
+        state.updatePreviewFoodEvidence(StartingFoodEvidence(pushableHuntCount: 3))
+        XCTAssertEqual(state.selectedBuild?.id, "fc-deer")
+    }
+
+    @MainActor
+    func testCatalogRemovalSameFamilyFallbackHasVisibleExplanation() throws {
+        let initial = [build("old-fc", civilizations: ["portuguese"], family: "fast-castle")]
+        let replacement = [
+            build("fi", civilizations: ["portuguese"], family: "fast-imperial"),
+            build("new-fc", civilizations: ["portuguese"], family: "fast-castle")
+        ]
+        let state = TrainerState(builds: initial, loader: { replacement })
+        state.selectPreviewCivilization("portuguese")
+        try state.reloadBuilds()
+        XCTAssertEqual(state.selectedBuild?.id, "new-fc")
+        XCTAssertEqual(state.exportPreferredBuildID, "new-fc")
+        XCTAssertTrue(state.selectionNotice?.contains("old-fc") ?? false)
+        XCTAssertTrue(state.selectionNotice?.contains("new-fc") ?? false)
+        XCTAssertTrue(state.selectionNotice?.contains("больше нет в каталоге") ?? false)
+    }
+
+    @MainActor
+    func testReloadDoesNotSilentlyReplaceRemovedFamilyWithAnother() throws {
+        let initial = [build("fc", civilizations: ["portuguese"], family: "fast-castle")]
+        let replacement = [build("fi", civilizations: ["portuguese"], family: "fast-imperial")]
+        let state = TrainerState(builds: initial, loader: { replacement })
+        state.selectPreviewCivilization("portuguese")
+        try state.reloadBuilds()
+        XCTAssertEqual(state.builds.map(\.id), ["fi"])
+        XCTAssertNil(state.selectedBuild)
+        XCTAssertEqual(state.requestedStrategyFamily, "fast-castle")
+        XCTAssertNil(state.exportPreferredBuildID, "Do not export a stale ID removed from the catalog")
+        state.cycleBuild()
+        XCTAssertEqual(state.selectedBuild?.id, "fi")
+    }
+
+    @MainActor
+    func testResetWhilePlanUnavailableClearsItsSavedStep() {
+        let state = TrainerState(builds: [
+            build("deer", civilizations: ["portuguese"],
+                  food: [StartingFoodRequirement(kind: .pushableHunt, minCount: 3)])
+        ])
+        state.updatePreviewFoodEvidence(StartingFoodEvidence(pushableHuntCount: 3))
+        state.selectPreviewCivilization("portuguese")
+        state.next()
+        state.updatePreviewFoodEvidence(.unknown)
+        state.reset()
+        state.updatePreviewFoodEvidence(StartingFoodEvidence(pushableHuntCount: 3))
+        XCTAssertEqual(state.selectedBuild?.id, "deer")
+        XCTAssertEqual(state.stepIndex, 0)
+    }
+
+    @MainActor
+    func testManualEvidenceIsBoundedAndNeverMutatesExportCatalog() throws {
+        let catalog = [
+            build("fc-generic", civilizations: ["portuguese"], family: "fast-castle"),
+            build("fc-deer", civilizations: ["portuguese"], family: "fast-castle",
+                  food: [StartingFoodRequirement(kind: .pushableHunt, minCount: 3)])
+        ]
+        let state = TrainerState(builds: catalog)
+        state.selectPreviewCivilization("portuguese")
+        let before = try XSBuildExporter.generate(builds: state.catalog,
+                                                  preferredBuildID: state.exportPreferredBuildID)
+        state.updatePreviewFoodEvidence(StartingFoodEvidence(pushableHuntCount: .max, smallGameCount: -1))
+        XCTAssertEqual(state.previewFoodEvidence.pushableHuntCount, 32)
+        XCTAssertEqual(state.previewFoodEvidence.smallGameCount, 0)
+        XCTAssertEqual(state.catalog, catalog)
+        XCTAssertEqual(state.exportPreferredBuildID, "fc-generic")
+        let after = try XSBuildExporter.generate(builds: state.catalog,
+                                                 preferredBuildID: state.exportPreferredBuildID)
+        XCTAssertEqual(after, before, "Manual preview facts must never leak into exported XS")
     }
 }

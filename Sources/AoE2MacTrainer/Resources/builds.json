@@ -27,9 +27,19 @@
       "xsID": 5
     },
     {
+      "id": "chinese",
+      "name": "Китайцы",
+      "xsID": 6
+    },
+    {
       "id": "byzantines",
       "name": "Византийцы",
       "xsID": 7
+    },
+    {
+      "id": "persians",
+      "name": "Персы",
+      "xsID": 8
     },
     {
       "id": "saracens",
@@ -67,6 +77,11 @@
       "xsID": 15
     },
     {
+      "id": "mayans",
+      "name": "Майя",
+      "xsID": 16
+    },
+    {
       "id": "huns",
       "name": "Гунны",
       "xsID": 17
@@ -80,6 +95,16 @@
       "id": "italians",
       "name": "Итальянцы",
       "xsID": 19
+    },
+    {
+      "id": "hindustanis",
+      "name": "Индостанцы",
+      "xsID": 20
+    },
+    {
+      "id": "incas",
+      "name": "Инки",
+      "xsID": 21
     },
     {
       "id": "magyars",
@@ -112,6 +137,16 @@
       "xsID": 27
     },
     {
+      "id": "khmer",
+      "name": "Кхмеры",
+      "xsID": 28
+    },
+    {
+      "id": "malay",
+      "name": "Малайцы",
+      "xsID": 29
+    },
+    {
       "id": "burmese",
       "name": "Бирманцы",
       "xsID": 30
@@ -120,6 +155,66 @@
       "id": "vietnamese",
       "name": "Вьетнамцы",
       "xsID": 31
+    },
+    {
+      "id": "bulgarians",
+      "name": "Болгары",
+      "xsID": 32
+    },
+    {
+      "id": "tatars",
+      "name": "Татары",
+      "xsID": 33
+    },
+    {
+      "id": "cumans",
+      "name": "Куманы",
+      "xsID": 34
+    },
+    {
+      "id": "lithuanians",
+      "name": "Литовцы",
+      "xsID": 35
+    },
+    {
+      "id": "burgundians",
+      "name": "Бургунды",
+      "xsID": 36
+    },
+    {
+      "id": "sicilians",
+      "name": "Сицилийцы",
+      "xsID": 37
+    },
+    {
+      "id": "poles",
+      "name": "Поляки",
+      "xsID": 38
+    },
+    {
+      "id": "bohemians",
+      "name": "Богемцы",
+      "xsID": 39
+    },
+    {
+      "id": "dravidians",
+      "name": "Дравиды",
+      "xsID": 40
+    },
+    {
+      "id": "bengalis",
+      "name": "Бенгальцы",
+      "xsID": 41
+    },
+    {
+      "id": "gurjaras",
+      "name": "Гурджары",
+      "xsID": 42
+    },
+    {
+      "id": "romans",
+      "name": "Римляне",
+      "xsID": 43
     },
     {
       "id": "armenians",
@@ -132,9 +227,59 @@
       "xsID": 45
     },
     {
+      "id": "shu",
+      "name": "Шу",
+      "xsID": 49
+    },
+    {
+      "id": "wu",
+      "name": "У",
+      "xsID": 50
+    },
+    {
+      "id": "wei",
+      "name": "Вэй",
+      "xsID": 51
+    },
+    {
+      "id": "jurchens",
+      "name": "Чжурчжэни",
+      "xsID": 52
+    },
+    {
       "id": "khitans",
       "name": "Кидани",
       "xsID": 53
+    },
+    {
+      "id": "muisca",
+      "name": "Муиски",
+      "xsID": 57
+    },
+    {
+      "id": "mapuche",
+      "name": "Мапуче",
+      "xsID": 58
+    },
+    {
+      "id": "tupi",
+      "name": "Тупи",
+      "xsID": 59
+    },
+    {
+      "id": "saxons",
+      "name": "Саксы",
+      "xsID": 60
+    },
+    {
+      "id": "varangians",
+      "name": "Варяги",
+      "xsID": 61
+    },
+    {
+      "id": "danes",
+      "name": "Датчане",
+      "xsID": 62
     }
   ],
   "builds": [
@@ -309,7 +454,8 @@
           ],
           "note": "Учебная цель включает стартового скаута, если он жив. Потери могут потребовать дополнительного производства."
         }
-      ]
+      ],
+      "strategyFamily": "scouts"
     },
     {
       "id": "arabia-archers",
@@ -451,7 +597,8 @@
           ],
           "note": "Учебная цель, а не обязательная атака в плохую позицию."
         }
-      ]
+      ],
+      "strategyFamily": "archers"
     },
     {
       "id": "arabia-men-at-arms-archers",
@@ -592,7 +739,8 @@
           ],
           "note": "Учебный срок; не подменяет решение об отступлении или смене состава."
         }
-      ]
+      ],
+      "strategyFamily": "men-at-arms-archers"
     },
     {
       "id": "arena-fast-castle",
@@ -761,7 +909,8 @@
           ],
           "note": "18:00 — наш учебный срок. Счётчик объектов не гарантирует завершения стройки."
         }
-      ]
+      ],
+      "strategyFamily": "fast-castle"
     },
     {
       "id": "arena-fast-castle-knights",
@@ -934,7 +1083,8 @@
           ],
           "note": "18:00 — учебная цель, не гарантированное время атаки."
         }
-      ]
+      ],
+      "strategyFamily": "fast-castle"
     },
     {
       "id": "turks-arena-fast-imperial",
@@ -1115,7 +1265,8 @@
           ],
           "note": "23:00 — учебный, не авторский срок. Защити осаду и возобнови экономику."
         }
-      ]
+      ],
+      "strategyFamily": "fast-imperial"
     },
     {
       "id": "arena-gunpowder-practice",
@@ -1365,7 +1516,8 @@
           ],
           "note": "29:00 — учебный контроль. Состав и продолжение корректируются по сопернику."
         }
-      ]
+      ],
+      "strategyFamily": "fast-imperial"
     },
     {
       "id": "khitans-scouts-pastures",
@@ -1488,7 +1640,8 @@
           "targetTimeSeconds": 960,
           "note": "Возможное продолжение — степные всадники или конные лучники, не линия рыцарей. Верблюжью осаду добавляй позже отдельным планом."
         }
-      ]
+      ],
+      "strategyFamily": "scouts"
     },
     {
       "id": "armenian-georgian-arena-fc",
@@ -1625,6 +1778,1757 @@
             "georgians"
           ],
           "note": "Не обязательный расход для чистого бума; зависит от разведки."
+        }
+      ],
+      "strategyFamily": "fast-castle"
+    },
+    {
+      "id": "practice-fast-castle-all-civs",
+      "name": "Fast Castle — адаптивная экономика (учебный)",
+      "civilizations": [
+        "britons",
+        "franks",
+        "goths",
+        "teutons",
+        "japanese",
+        "chinese",
+        "byzantines",
+        "persians",
+        "saracens",
+        "turks",
+        "vikings",
+        "mongols",
+        "celts",
+        "spanish",
+        "aztecs",
+        "mayans",
+        "huns",
+        "koreans",
+        "italians",
+        "hindustanis",
+        "incas",
+        "magyars",
+        "slavs",
+        "portuguese",
+        "ethiopians",
+        "malians",
+        "berbers",
+        "khmer",
+        "malay",
+        "burmese",
+        "vietnamese",
+        "bulgarians",
+        "tatars",
+        "cumans",
+        "lithuanians",
+        "burgundians",
+        "sicilians",
+        "poles",
+        "bohemians",
+        "dravidians",
+        "bengalis",
+        "gurjaras",
+        "romans",
+        "armenians",
+        "georgians",
+        "shu",
+        "wu",
+        "wei",
+        "jurchens",
+        "khitans",
+        "muisca",
+        "mapuche",
+        "tupi",
+        "saxons",
+        "varangians",
+        "danes"
+      ],
+      "map": "Арена / безопасная сухопутная тренировка",
+      "mapScriptFile": "Arena.rms",
+      "strategy": "Age training → Castle",
+      "strategyFamily": "fast-castle",
+      "description": "Одно-ТЦ учебная тренировка для стандартного старта на безопасной суше. Все сроки заданы для практики и редактируются, не подтверждены реплеем и не являются оптимальными для всех цивилизаций. Ветки учитывают особые старты, региональные пункты сдачи и бонусы к еде. Безопасная охота полезна, но овцы не запрещены и для некоторых цивилизаций особенно ценны. Бонусы Персии, Малайцев, Бенгальцев и Вэй не превращаются в универсальную формулу простоя ТЦ.",
+      "planStatus": "practice-targets",
+      "sources": [
+        {
+          "title": "Age of Empires — Advancing to the Next Age (official)",
+          "url": "https://www.ageofempires.com/learn-to-play/advancing-aoe2/"
+        },
+        {
+          "title": "SiegeEngineers — extracted game data; object and technology availability",
+          "url": "https://github.com/SiegeEngineers/aoe2techtree/blob/master/data/data.json"
+        },
+        {
+          "title": "SiegeEngineers — civilization bonuses and regional economy descriptions",
+          "url": "https://github.com/SiegeEngineers/aoe2techtree/blob/master/data/locales/en/strings.json"
+        },
+        {
+          "title": "Age of Empires — The Last Chieftains regional Settlements",
+          "url": "https://www.ageofempires.com/news/pre-order-the-last-chieftains-aoeii-de/"
+        },
+        {
+          "title": "Forgotten Empires developer — Settlements replace resource camps",
+          "url": "https://forums.ageofempires.com/t/gold-lumber-mining-camp-missing/284203"
+        },
+        {
+          "title": "Morley Games — classic Fast Castle skeleton; food variants are our practice adaptations",
+          "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=2360858024"
+        },
+        {
+          "title": "Age of Empires — Khitans and Pastures",
+          "url": "https://www.ageofempires.com/games/aoeiide/civilizations/khitan/"
+        }
+      ],
+      "steps": [
+        {
+          "action": "Запусти очередь ТЦ; ближайшая еда и жильё по лимиту",
+          "targetTimeSeconds": 30,
+          "exclude": [
+            "chinese",
+            "mayans",
+            "huns"
+          ],
+          "note": "Одно-ТЦ упражнение. Не обязательно строить два дома сразу: поселения и другие бонусы тоже обеспечивают население."
+        },
+        {
+          "action": "Китайцы: шесть стартовых крестьян — на доступную еду; ранний Loom",
+          "targetTimeSeconds": 30,
+          "includeOnly": [
+            "chinese"
+          ],
+          "note": "Стартовая еда отличается от обычной. Сначала обеспечь 50 еды на следующего крестьянина; не обещаем обычный таймер производства с нулевой секунды."
+        },
+        {
+          "action": "Майя: ранний Loom и освобождение лимита; затем очередь ТЦ",
+          "targetTimeSeconds": 30,
+          "includeOnly": [
+            "mayans"
+          ],
+          "note": "Четыре стартовых крестьянина и меньше еды. Контролируй дом и лимит; не прибавляй разведчика к числу крестьян."
+        },
+        {
+          "action": "Гунны: очередь ТЦ и ближайшая еда, без домов",
+          "targetTimeSeconds": 30,
+          "includeOnly": [
+            "huns"
+          ],
+          "note": "Стартового дерева меньше; дома этой цивилизации не нужны."
+        },
+        {
+          "action": "Проверь наличие минимум шести живых крестьян",
+          "targetTimeSeconds": 100,
+          "targetVillagers": 6,
+          "note": "Учебный минимум общего числа, не доказательство отсутствия простоя ТЦ. Китайцы уже начинают с шестью."
+        },
+        {
+          "action": "Не менее шести работников на доступной еде",
+          "targetTimeSeconds": 120,
+          "allocation": {
+            "food": 6,
+            "wood": 0,
+            "gold": 0,
+            "stone": 0
+          },
+          "note": "Приблизительный минимум роли XS, не требование шести именно на овцах. Не оставляй ТЦ без еды ради выбранного вида пищи."
+        },
+        {
+          "action": "Осмотри безопасную охоту; овцы остаются резервом для ТЦ",
+          "targetTimeSeconds": 240,
+          "exclude": [
+            "gurjaras",
+            "britons",
+            "tatars"
+          ],
+          "note": "Приоритет охоте только при доступности. Наличие животных не доказывает безопасный подгон; неподгоняемую мелкую дичь собирают на месте с подходящим пунктом сдачи."
+        },
+        {
+          "action": "Бритты: используй быстрых пастухов; не отказывайся от овец ради шаблона",
+          "targetTimeSeconds": 240,
+          "includeOnly": [
+            "britons"
+          ],
+          "note": "Пастухи работают на 25% быстрее. При выборе еды сравни путь и фактическую добычу; охота не получает безусловный приоритет только по типу животного."
+        },
+        {
+          "action": "Татары: учитывай увеличенный запас еды в скоте",
+          "targetTimeSeconds": 240,
+          "includeOnly": [
+            "tatars"
+          ],
+          "note": "Скот даёт на 50% больше еды. Это бонус к запасу, не к скорости добычи; используй безопасную охоту, не прерывая очередь ТЦ."
+        },
+        {
+          "action": "Гурджары: учитывай скот в мельнице и дополнительные ягоды",
+          "targetTimeSeconds": 240,
+          "includeOnly": [
+            "gurjaras"
+          ],
+          "note": "Не съедай весь скот автоматически: он может давать пассивную еду. Безопасная охота полезна, но очередь ТЦ важнее жёсткого запрета на овец."
+        },
+        {
+          "action": "Двенадцать живых крестьян; продолжай экономику",
+          "targetTimeSeconds": 300,
+          "targetVillagers": 12
+        },
+        {
+          "action": "Мельница и лесопилка — экономическая основа перехода",
+          "targetTimeSeconds": 330,
+          "exclude": [
+            "incas",
+            "muisca",
+            "mapuche",
+            "tupi",
+            "armenians",
+            "georgians",
+            "poles",
+            "khmer"
+          ],
+          "unitGoals": [
+            {
+              "objectId": 68,
+              "count": 1,
+              "label": "Мельница"
+            },
+            {
+              "objectId": 562,
+              "count": 1,
+              "label": "Лесопилка"
+            }
+          ],
+          "note": "Наличие объекта может включать фундамент; для перехода дождись окончания строительства."
+        },
+        {
+          "action": "Повозка и мельница; не строй обычные лесопилку и горный лагерь",
+          "targetTimeSeconds": 330,
+          "includeOnly": [
+            "armenians",
+            "georgians"
+          ],
+          "unitGoals": [
+            {
+              "objectId": 1808,
+              "count": 1,
+              "label": "Повозка"
+            },
+            {
+              "objectId": 68,
+              "count": 1,
+              "label": "Мельница"
+            }
+          ],
+          "note": "Повозка сдаёт древесину, золото, камень и охотничью еду. Доступность эпохи проверь в ТЦ; счётчик предпосылок отдельно в Mac-матче пока не проверен."
+        },
+        {
+          "action": "Построй Settlement рядом с нужными ресурсами",
+          "targetTimeSeconds": 330,
+          "includeOnly": [
+            "incas",
+            "muisca",
+            "mapuche",
+            "tupi"
+          ],
+          "unitGoals": [
+            {
+              "objectId": 2556,
+              "count": 1,
+              "label": "Поселение"
+            }
+          ],
+          "note": "Заменяет мельницу, лесопилку и горный лагерь, принимает все ресурсы и даёт население. Не требуем два поселения или лишние бараки: доступность эпохи проверь в ТЦ."
+        },
+        {
+          "action": "Польский фольварк и лесопилка вместо обычной мельницы",
+          "targetTimeSeconds": 330,
+          "includeOnly": [
+            "poles"
+          ],
+          "unitGoals": [
+            {
+              "objectId": 1734,
+              "count": 1,
+              "label": "Фольварк"
+            },
+            {
+              "objectId": 562,
+              "count": 1,
+              "label": "Лесопилка"
+            }
+          ],
+          "note": "Размещай будущие фермы с учётом фольварка; не ищи отсутствующую обычную мельницу."
+        },
+        {
+          "action": "Кхмеры: не строй лишние здания только ради доступа к эпохе",
+          "targetTimeSeconds": 330,
+          "includeOnly": [
+            "khmer"
+          ],
+          "note": "Ресурсные пункты полезны для экономики, но обычные строительные предпосылки эпох этой цивилизации не нужны."
+        },
+        {
+          "action": "Продолжай играть с одним ТЦ до целевого перехода",
+          "targetTimeSeconds": 390,
+          "includeOnly": [
+            "cumans"
+          ],
+          "note": "Второй ТЦ в Феодале доступен, но меняет экономический план. Это не двух-ТЦ куманский билд."
+        },
+        {
+          "action": "Не менее шести работников на дереве",
+          "targetTimeSeconds": 450,
+          "allocation": {
+            "food": 0,
+            "wood": 6,
+            "gold": 0,
+            "stone": 0
+          },
+          "note": "Учебный минимум роли XS; не означает ровно шесть. Поддерживай короткий путь до доступного своей цивилизации пункта сдачи."
+        },
+        {
+          "action": "Двадцать живых крестьян; не останавливай пищевую экономику",
+          "targetTimeSeconds": 480,
+          "targetVillagers": 20
+        },
+        {
+          "action": "Кидани: при исчерпании природной еды переходи на пастбища",
+          "targetTimeSeconds": 520,
+          "includeOnly": [
+            "khitans"
+          ],
+          "note": "Мельница нужна для пастбищ. Не копируй обычную раскладку ферм; планируй по два работника на пастбище."
+        },
+        {
+          "action": "Не менее двенадцати работников на еде",
+          "targetTimeSeconds": 580,
+          "allocation": {
+            "food": 12,
+            "wood": 0,
+            "gold": 0,
+            "stone": 0
+          },
+          "note": "Учебная, приблизительная цель распределения. Можно смешивать доступные безопасные источники; это не счётчик конкретных животных."
+        },
+        {
+          "action": "Не менее трёх работников на золоте",
+          "targetTimeSeconds": 620,
+          "allocation": {
+            "food": 0,
+            "wood": 0,
+            "gold": 3,
+            "stone": 0
+          },
+          "note": "Используй обычный горный лагерь, повозку или поселение своей цивилизации. Нули в allocation не запрещают добычу других ресурсов."
+        },
+        {
+          "action": "Не менее 26 живых крестьян перед переходом",
+          "targetTimeSeconds": 660,
+          "targetVillagers": 26,
+          "note": "Консервативный общий минимум, не оптимальная population-формула для всех цивилизаций."
+        },
+        {
+          "action": "Loom должен быть завершён; не исследуй его повторно",
+          "targetTimeSeconds": 690,
+          "technologyGoals": [
+            {
+              "technologyId": 22,
+              "label": "Ткацкий станок / Loom"
+            }
+          ],
+          "note": "У китайцев и майя он предложен в начале. Исследования и бонусные крестьяне не используются здесь для вычисления простоя ТЦ."
+        },
+        {
+          "action": "Нажми Феодальную эпоху при готовой экономике",
+          "targetTimeSeconds": 710,
+          "exclude": [
+            "italians"
+          ],
+          "note": "Обычно нужно 500 еды; фактические требования смотри в ТЦ. Не начинай отсчёт перехода по моменту появления подсказки."
+        },
+        {
+          "action": "Итальянцы: нажми Феодал по сниженной цене",
+          "targetTimeSeconds": 710,
+          "includeOnly": [
+            "italians"
+          ],
+          "note": "425 еды. Время исследования от этой скидки не сокращается."
+        },
+        {
+          "action": "Достигни Феодальной эпохи",
+          "targetTimeSeconds": 840,
+          "technologyGoals": [
+            {
+              "technologyId": 101,
+              "label": "Феодальная эпоха"
+            }
+          ],
+          "note": "14:00 — наш редактируемый учебный срок, не профессиональный норматив. Персидские ТЦ и малайские переходы имеют другие скорости."
+        },
+        {
+          "action": "Бенгальцы: распредели появившихся при переходе крестьян",
+          "targetTimeSeconds": 855,
+          "includeOnly": [
+            "bengalis"
+          ],
+          "note": "Это бонусные крестьяне, а не два доказанных цикла производства ТЦ."
+        },
+        {
+          "action": "Построй рынок и кузницу для дальнейшего перехода",
+          "targetTimeSeconds": 920,
+          "exclude": [
+            "khmer"
+          ],
+          "targetVillagers": 28,
+          "unitGoals": [
+            {
+              "objectId": 84,
+              "count": 1,
+              "label": "Рынок"
+            },
+            {
+              "objectId": 103,
+              "count": 1,
+              "label": "Кузница"
+            }
+          ],
+          "note": "Проверь завершение строительства, а не только наличие фундамента. 28 — минимум живых крестьян с учётом бесплатных появлений."
+        },
+        {
+          "action": "Кхмеры: рынок и кузница по нуждам экономики и следующего этапа",
+          "targetTimeSeconds": 920,
+          "includeOnly": [
+            "khmer"
+          ],
+          "targetVillagers": 28,
+          "note": "Рынок и кузница необязательны; кхмерам кузница не нужна и для открытия осадной мастерской. Строй их только для собственных экономических или военных задач."
+        },
+        {
+          "action": "Нажми Замковую эпоху по готовности ресурсов",
+          "targetTimeSeconds": 950,
+          "exclude": [
+            "italians",
+            "muisca"
+          ],
+          "note": "Обычная цена — 800 еды и 200 золота; ориентируйся на фактическую кнопку ТЦ."
+        },
+        {
+          "action": "Итальянцы: нажми Замки по сниженной цене",
+          "targetTimeSeconds": 950,
+          "includeOnly": [
+            "italians"
+          ],
+          "note": "680 еды и 170 золота."
+        },
+        {
+          "action": "Муиски: учитывай скидку только на золотую часть эпохи",
+          "targetTimeSeconds": 950,
+          "includeOnly": [
+            "muisca"
+          ],
+          "note": "Для Замков — 800 еды и 100 золота. Пищевую часть скидка не уменьшает."
+        },
+        {
+          "action": "Достигни Замковой эпохи",
+          "targetTimeSeconds": 1110,
+          "technologyGoals": [
+            {
+              "technologyId": 102,
+              "label": "Замковая эпоха"
+            }
+          ],
+          "note": "18:30 — учебная цель для адаптации под карту, не одинаковый оптимум всех 56 цивилизаций."
+        },
+        {
+          "action": "Выбери продолжение: экономика, монахи или доступная армия",
+          "targetTimeSeconds": 1140,
+          "note": "Общий переход не требует рыцарей или другой неуниверсальной линии. Специализированный боевой билд выбирается отдельно."
+        }
+      ]
+    },
+    {
+      "id": "practice-fast-imperial-all-civs",
+      "name": "Fast Imperial — переход эпох (учебный)",
+      "civilizations": [
+        "britons",
+        "franks",
+        "goths",
+        "teutons",
+        "japanese",
+        "chinese",
+        "byzantines",
+        "persians",
+        "saracens",
+        "turks",
+        "vikings",
+        "mongols",
+        "celts",
+        "spanish",
+        "aztecs",
+        "mayans",
+        "huns",
+        "koreans",
+        "italians",
+        "hindustanis",
+        "incas",
+        "magyars",
+        "slavs",
+        "portuguese",
+        "ethiopians",
+        "malians",
+        "berbers",
+        "khmer",
+        "malay",
+        "burmese",
+        "vietnamese",
+        "bulgarians",
+        "tatars",
+        "cumans",
+        "lithuanians",
+        "burgundians",
+        "sicilians",
+        "poles",
+        "bohemians",
+        "dravidians",
+        "bengalis",
+        "gurjaras",
+        "romans",
+        "armenians",
+        "georgians",
+        "shu",
+        "wu",
+        "wei",
+        "jurchens",
+        "khitans",
+        "muisca",
+        "mapuche",
+        "tupi",
+        "saxons",
+        "varangians",
+        "danes"
+      ],
+      "map": "Арена / безопасная сухопутная тренировка",
+      "mapScriptFile": "Arena.rms",
+      "strategy": "Age training → Imperial",
+      "strategyFamily": "fast-imperial",
+      "description": "Одно-ТЦ учебная тренировка для стандартного старта на безопасной суше. Все сроки заданы для практики и редактируются, не подтверждены реплеем и не являются оптимальными для всех цивилизаций. Ветки учитывают особые старты, региональные пункты сдачи и бонусы к еде. Безопасная охота полезна, но овцы не запрещены и для некоторых цивилизаций особенно ценны. Бонусы Персии, Малайцев, Бенгальцев и Вэй не превращаются в универсальную формулу простоя ТЦ. Не универсальный пороховой раш: состав армии здесь намеренно не задан.",
+      "planStatus": "practice-targets",
+      "sources": [
+        {
+          "title": "Age of Empires — Advancing to the Next Age (official)",
+          "url": "https://www.ageofempires.com/learn-to-play/advancing-aoe2/"
+        },
+        {
+          "title": "SiegeEngineers — extracted game data; object and technology availability",
+          "url": "https://github.com/SiegeEngineers/aoe2techtree/blob/master/data/data.json"
+        },
+        {
+          "title": "SiegeEngineers — civilization bonuses and regional economy descriptions",
+          "url": "https://github.com/SiegeEngineers/aoe2techtree/blob/master/data/locales/en/strings.json"
+        },
+        {
+          "title": "Age of Empires — The Last Chieftains regional Settlements",
+          "url": "https://www.ageofempires.com/news/pre-order-the-last-chieftains-aoeii-de/"
+        },
+        {
+          "title": "Forgotten Empires developer — Settlements replace resource camps",
+          "url": "https://forums.ageofempires.com/t/gold-lumber-mining-camp-missing/284203"
+        },
+        {
+          "title": "Morley Games — classic Fast Castle skeleton; food variants are our practice adaptations",
+          "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=2360858024"
+        },
+        {
+          "title": "Age of Empires — Khitans and Pastures",
+          "url": "https://www.ageofempires.com/games/aoeiide/civilizations/khitan/"
+        }
+      ],
+      "steps": [
+        {
+          "action": "Запусти очередь ТЦ; ближайшая еда и жильё по лимиту",
+          "targetTimeSeconds": 30,
+          "exclude": [
+            "chinese",
+            "mayans",
+            "huns"
+          ],
+          "note": "Одно-ТЦ упражнение. Не обязательно строить два дома сразу: поселения и другие бонусы тоже обеспечивают население."
+        },
+        {
+          "action": "Китайцы: шесть стартовых крестьян — на доступную еду; ранний Loom",
+          "targetTimeSeconds": 30,
+          "includeOnly": [
+            "chinese"
+          ],
+          "note": "Стартовая еда отличается от обычной. Сначала обеспечь 50 еды на следующего крестьянина; не обещаем обычный таймер производства с нулевой секунды."
+        },
+        {
+          "action": "Майя: ранний Loom и освобождение лимита; затем очередь ТЦ",
+          "targetTimeSeconds": 30,
+          "includeOnly": [
+            "mayans"
+          ],
+          "note": "Четыре стартовых крестьянина и меньше еды. Контролируй дом и лимит; не прибавляй разведчика к числу крестьян."
+        },
+        {
+          "action": "Гунны: очередь ТЦ и ближайшая еда, без домов",
+          "targetTimeSeconds": 30,
+          "includeOnly": [
+            "huns"
+          ],
+          "note": "Стартового дерева меньше; дома этой цивилизации не нужны."
+        },
+        {
+          "action": "Проверь наличие минимум шести живых крестьян",
+          "targetTimeSeconds": 100,
+          "targetVillagers": 6,
+          "note": "Учебный минимум общего числа, не доказательство отсутствия простоя ТЦ. Китайцы уже начинают с шестью."
+        },
+        {
+          "action": "Не менее шести работников на доступной еде",
+          "targetTimeSeconds": 120,
+          "allocation": {
+            "food": 6,
+            "wood": 0,
+            "gold": 0,
+            "stone": 0
+          },
+          "note": "Приблизительный минимум роли XS, не требование шести именно на овцах. Не оставляй ТЦ без еды ради выбранного вида пищи."
+        },
+        {
+          "action": "Осмотри безопасную охоту; овцы остаются резервом для ТЦ",
+          "targetTimeSeconds": 240,
+          "exclude": [
+            "gurjaras",
+            "britons",
+            "tatars"
+          ],
+          "note": "Приоритет охоте только при доступности. Наличие животных не доказывает безопасный подгон; неподгоняемую мелкую дичь собирают на месте с подходящим пунктом сдачи."
+        },
+        {
+          "action": "Бритты: используй быстрых пастухов; не отказывайся от овец ради шаблона",
+          "targetTimeSeconds": 240,
+          "includeOnly": [
+            "britons"
+          ],
+          "note": "Пастухи работают на 25% быстрее. При выборе еды сравни путь и фактическую добычу; охота не получает безусловный приоритет только по типу животного."
+        },
+        {
+          "action": "Татары: учитывай увеличенный запас еды в скоте",
+          "targetTimeSeconds": 240,
+          "includeOnly": [
+            "tatars"
+          ],
+          "note": "Скот даёт на 50% больше еды. Это бонус к запасу, не к скорости добычи; используй безопасную охоту, не прерывая очередь ТЦ."
+        },
+        {
+          "action": "Гурджары: учитывай скот в мельнице и дополнительные ягоды",
+          "targetTimeSeconds": 240,
+          "includeOnly": [
+            "gurjaras"
+          ],
+          "note": "Не съедай весь скот автоматически: он может давать пассивную еду. Безопасная охота полезна, но очередь ТЦ важнее жёсткого запрета на овец."
+        },
+        {
+          "action": "Двенадцать живых крестьян; продолжай экономику",
+          "targetTimeSeconds": 300,
+          "targetVillagers": 12
+        },
+        {
+          "action": "Мельница и лесопилка — экономическая основа перехода",
+          "targetTimeSeconds": 330,
+          "exclude": [
+            "incas",
+            "muisca",
+            "mapuche",
+            "tupi",
+            "armenians",
+            "georgians",
+            "poles",
+            "khmer"
+          ],
+          "unitGoals": [
+            {
+              "objectId": 68,
+              "count": 1,
+              "label": "Мельница"
+            },
+            {
+              "objectId": 562,
+              "count": 1,
+              "label": "Лесопилка"
+            }
+          ],
+          "note": "Наличие объекта может включать фундамент; для перехода дождись окончания строительства."
+        },
+        {
+          "action": "Повозка и мельница; не строй обычные лесопилку и горный лагерь",
+          "targetTimeSeconds": 330,
+          "includeOnly": [
+            "armenians",
+            "georgians"
+          ],
+          "unitGoals": [
+            {
+              "objectId": 1808,
+              "count": 1,
+              "label": "Повозка"
+            },
+            {
+              "objectId": 68,
+              "count": 1,
+              "label": "Мельница"
+            }
+          ],
+          "note": "Повозка сдаёт древесину, золото, камень и охотничью еду. Доступность эпохи проверь в ТЦ; счётчик предпосылок отдельно в Mac-матче пока не проверен."
+        },
+        {
+          "action": "Построй Settlement рядом с нужными ресурсами",
+          "targetTimeSeconds": 330,
+          "includeOnly": [
+            "incas",
+            "muisca",
+            "mapuche",
+            "tupi"
+          ],
+          "unitGoals": [
+            {
+              "objectId": 2556,
+              "count": 1,
+              "label": "Поселение"
+            }
+          ],
+          "note": "Заменяет мельницу, лесопилку и горный лагерь, принимает все ресурсы и даёт население. Не требуем два поселения или лишние бараки: доступность эпохи проверь в ТЦ."
+        },
+        {
+          "action": "Польский фольварк и лесопилка вместо обычной мельницы",
+          "targetTimeSeconds": 330,
+          "includeOnly": [
+            "poles"
+          ],
+          "unitGoals": [
+            {
+              "objectId": 1734,
+              "count": 1,
+              "label": "Фольварк"
+            },
+            {
+              "objectId": 562,
+              "count": 1,
+              "label": "Лесопилка"
+            }
+          ],
+          "note": "Размещай будущие фермы с учётом фольварка; не ищи отсутствующую обычную мельницу."
+        },
+        {
+          "action": "Кхмеры: не строй лишние здания только ради доступа к эпохе",
+          "targetTimeSeconds": 330,
+          "includeOnly": [
+            "khmer"
+          ],
+          "note": "Ресурсные пункты полезны для экономики, но обычные строительные предпосылки эпох этой цивилизации не нужны."
+        },
+        {
+          "action": "Продолжай играть с одним ТЦ до целевого перехода",
+          "targetTimeSeconds": 390,
+          "includeOnly": [
+            "cumans"
+          ],
+          "note": "Второй ТЦ в Феодале доступен, но меняет экономический план. Это не двух-ТЦ куманский билд."
+        },
+        {
+          "action": "Не менее шести работников на дереве",
+          "targetTimeSeconds": 450,
+          "allocation": {
+            "food": 0,
+            "wood": 6,
+            "gold": 0,
+            "stone": 0
+          },
+          "note": "Учебный минимум роли XS; не означает ровно шесть. Поддерживай короткий путь до доступного своей цивилизации пункта сдачи."
+        },
+        {
+          "action": "Двадцать живых крестьян; не останавливай пищевую экономику",
+          "targetTimeSeconds": 480,
+          "targetVillagers": 20
+        },
+        {
+          "action": "Кидани: при исчерпании природной еды переходи на пастбища",
+          "targetTimeSeconds": 520,
+          "includeOnly": [
+            "khitans"
+          ],
+          "note": "Мельница нужна для пастбищ. Не копируй обычную раскладку ферм; планируй по два работника на пастбище."
+        },
+        {
+          "action": "Не менее двенадцати работников на еде",
+          "targetTimeSeconds": 580,
+          "allocation": {
+            "food": 12,
+            "wood": 0,
+            "gold": 0,
+            "stone": 0
+          },
+          "note": "Учебная, приблизительная цель распределения. Можно смешивать доступные безопасные источники; это не счётчик конкретных животных."
+        },
+        {
+          "action": "Не менее трёх работников на золоте",
+          "targetTimeSeconds": 620,
+          "allocation": {
+            "food": 0,
+            "wood": 0,
+            "gold": 3,
+            "stone": 0
+          },
+          "note": "Используй обычный горный лагерь, повозку или поселение своей цивилизации. Нули в allocation не запрещают добычу других ресурсов."
+        },
+        {
+          "action": "Не менее 26 живых крестьян перед переходом",
+          "targetTimeSeconds": 660,
+          "targetVillagers": 26,
+          "note": "Консервативный общий минимум, не оптимальная population-формула для всех цивилизаций."
+        },
+        {
+          "action": "Loom должен быть завершён; не исследуй его повторно",
+          "targetTimeSeconds": 690,
+          "technologyGoals": [
+            {
+              "technologyId": 22,
+              "label": "Ткацкий станок / Loom"
+            }
+          ],
+          "note": "У китайцев и майя он предложен в начале. Исследования и бонусные крестьяне не используются здесь для вычисления простоя ТЦ."
+        },
+        {
+          "action": "Нажми Феодальную эпоху при готовой экономике",
+          "targetTimeSeconds": 710,
+          "exclude": [
+            "italians"
+          ],
+          "note": "Обычно нужно 500 еды; фактические требования смотри в ТЦ. Не начинай отсчёт перехода по моменту появления подсказки."
+        },
+        {
+          "action": "Итальянцы: нажми Феодал по сниженной цене",
+          "targetTimeSeconds": 710,
+          "includeOnly": [
+            "italians"
+          ],
+          "note": "425 еды. Время исследования от этой скидки не сокращается."
+        },
+        {
+          "action": "Достигни Феодальной эпохи",
+          "targetTimeSeconds": 840,
+          "technologyGoals": [
+            {
+              "technologyId": 101,
+              "label": "Феодальная эпоха"
+            }
+          ],
+          "note": "14:00 — наш редактируемый учебный срок, не профессиональный норматив. Персидские ТЦ и малайские переходы имеют другие скорости."
+        },
+        {
+          "action": "Бенгальцы: распредели появившихся при переходе крестьян",
+          "targetTimeSeconds": 855,
+          "includeOnly": [
+            "bengalis"
+          ],
+          "note": "Это бонусные крестьяне, а не два доказанных цикла производства ТЦ."
+        },
+        {
+          "action": "Построй рынок и кузницу для дальнейшего перехода",
+          "targetTimeSeconds": 920,
+          "exclude": [
+            "khmer"
+          ],
+          "targetVillagers": 28,
+          "unitGoals": [
+            {
+              "objectId": 84,
+              "count": 1,
+              "label": "Рынок"
+            },
+            {
+              "objectId": 103,
+              "count": 1,
+              "label": "Кузница"
+            }
+          ],
+          "note": "Проверь завершение строительства, а не только наличие фундамента. 28 — минимум живых крестьян с учётом бесплатных появлений."
+        },
+        {
+          "action": "Кхмеры: рынок и кузница по нуждам экономики и следующего этапа",
+          "targetTimeSeconds": 920,
+          "includeOnly": [
+            "khmer"
+          ],
+          "targetVillagers": 28,
+          "note": "Рынок и кузница необязательны; кхмерам кузница не нужна и для открытия осадной мастерской. Строй их только для собственных экономических или военных задач."
+        },
+        {
+          "action": "Нажми Замковую эпоху по готовности ресурсов",
+          "targetTimeSeconds": 950,
+          "exclude": [
+            "italians",
+            "muisca"
+          ],
+          "note": "Обычная цена — 800 еды и 200 золота; ориентируйся на фактическую кнопку ТЦ."
+        },
+        {
+          "action": "Итальянцы: нажми Замки по сниженной цене",
+          "targetTimeSeconds": 950,
+          "includeOnly": [
+            "italians"
+          ],
+          "note": "680 еды и 170 золота."
+        },
+        {
+          "action": "Муиски: учитывай скидку только на золотую часть эпохи",
+          "targetTimeSeconds": 950,
+          "includeOnly": [
+            "muisca"
+          ],
+          "note": "Для Замков — 800 еды и 100 золота. Пищевую часть скидка не уменьшает."
+        },
+        {
+          "action": "Достигни Замковой эпохи",
+          "targetTimeSeconds": 1110,
+          "technologyGoals": [
+            {
+              "technologyId": 102,
+              "label": "Замковая эпоха"
+            }
+          ],
+          "note": "18:30 — учебная цель для адаптации под карту, не одинаковый оптимум всех 56 цивилизаций."
+        },
+        {
+          "action": "Усиль золото; сохрани еду для следующего перехода",
+          "targetTimeSeconds": 1170,
+          "note": "Не вкладывайся автоматически в три ТЦ или большую армию: это одно-ТЦ упражнение перехода, уязвимое к атаке."
+        },
+        {
+          "action": "Не менее 32 живых крестьян",
+          "targetTimeSeconds": 1260,
+          "targetVillagers": 32,
+          "note": "Бонусные появления бенгальцев и Вэй входят в общий счёт; не имитируем универсальный темп производства."
+        },
+        {
+          "action": "Подготовь экономику Империала",
+          "targetTimeSeconds": 1290,
+          "allocation": {
+            "food": 16,
+            "wood": 6,
+            "gold": 6,
+            "stone": 0
+          },
+          "note": "Учебные минимумы приблизительных ролей: 16 еда, 6 дерево, 6 золото. Распределение разрешено менять после накопления ресурсов."
+        },
+        {
+          "action": "Университет и осадная мастерская, при необходимости сначала кузница",
+          "targetTimeSeconds": 1350,
+          "unitGoals": [
+            {
+              "objectId": 209,
+              "count": 1,
+              "label": "Университет"
+            },
+            {
+              "objectId": 49,
+              "count": 1,
+              "label": "Осадная мастерская"
+            }
+          ],
+          "note": "Эта пара доступна всем 56 цивилизациям. Обычно для мастерской нужна кузница; кхмерам она для доступа не требуется. У кхмеров здания не являются обязательным условием самого перехода."
+        },
+        {
+          "action": "Нажми Империал; оставь ресурсы на выбранное продолжение",
+          "targetTimeSeconds": 1450,
+          "exclude": [
+            "italians",
+            "byzantines",
+            "muisca"
+          ],
+          "note": "Обычная цена — 1000 еды и 800 золота. Это ручное действие, а не подтверждение начала исследования."
+        },
+        {
+          "action": "Итальянцы: нажми Империал со скидкой",
+          "targetTimeSeconds": 1450,
+          "includeOnly": [
+            "italians"
+          ],
+          "note": "850 еды и 680 золота."
+        },
+        {
+          "action": "Византийцы: используй скидку на Империал",
+          "targetTimeSeconds": 1450,
+          "includeOnly": [
+            "byzantines"
+          ],
+          "note": "Цена перехода ниже обычной; используй фактические значения на кнопке ТЦ. Это не универсальная скидка на все эпохи."
+        },
+        {
+          "action": "Муиски: нажми Империал с уменьшенной золотой ценой",
+          "targetTimeSeconds": 1450,
+          "includeOnly": [
+            "muisca"
+          ],
+          "note": "1000 еды и 400 золота."
+        },
+        {
+          "action": "Достигни Имперской эпохи",
+          "targetTimeSeconds": 1650,
+          "technologyGoals": [
+            {
+              "technologyId": 103,
+              "label": "Имперская эпоха"
+            }
+          ],
+          "note": "27:30 — намеренно свободный учебный срок. Нет универсального требования Chemistry, ручных канониров, рыцарей или бомбард."
+        },
+        {
+          "action": "Выбери доступное своей цивилизации военное продолжение",
+          "targetTimeSeconds": 1680,
+          "note": "Общий переход закончен; боевой билд для этой цивилизации может ещё отсутствовать. Это не автоматически проверяемая военная цель."
+        }
+      ]
+    },
+    {
+      "id": "practice-fast-castle-pushable-hunt",
+      "name": "Fast Castle — охота с возможным подгоном (учебный)",
+      "civilizations": [
+        "portuguese",
+        "turks",
+        "spanish",
+        "byzantines",
+        "magyars",
+        "berbers"
+      ],
+      "map": "Безопасная сухопутная тренировка",
+      "mapScriptFile": "Arena.rms",
+      "strategy": "Food adaptation → Castle",
+      "strategyFamily": "fast-castle",
+      "startingFoodRequirements": [
+        {
+          "kind": "pushable-hunt",
+          "minCount": 3
+        }
+      ],
+      "planStatus": "practice-targets",
+      "description": "Компактная учебная адаптация для шести цивилизаций с проверенными обычными пунктами сдачи. Все сроки наши тренировочные, не авторский оптимизированный билд. Требование означает положительное наблюдение категории и количества; оно не гарантирует сохранившийся запас пищи, безопасный путь или выполненный подгон. При неизвестных наблюдениях выбирай общий план. ТЦ не должен простаивать ради экономии овец.",
+      "sources": [
+        {
+          "title": "Age of Empires — Advancing to the Next Age (official)",
+          "url": "https://www.ageofempires.com/learn-to-play/advancing-aoe2/"
+        },
+        {
+          "title": "SiegeEngineers — extracted game data; object and technology availability",
+          "url": "https://github.com/SiegeEngineers/aoe2techtree/blob/master/data/data.json"
+        },
+        {
+          "title": "Morley Games — classic Fast Castle skeleton; food variants are our practice adaptations",
+          "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=2360858024"
+        },
+        {
+          "title": "Age of Empires — food categories and gathering (official)",
+          "url": "https://www.ageofempires.com/learn-to-play/control-resources-aoe2/"
+        },
+        {
+          "title": "Age of Empires — Update 153015: unpushable hares",
+          "url": "https://www.ageofempires.com/news/age-of-empires-ii-definitive-edition-update-153015/"
+        },
+        {
+          "title": "Age of Empires — Update 188329: chicken/rabbit funneling removed",
+          "url": "https://www.ageofempires.com/news/age-of-empires-ii-definitive-edition-update-188329/"
+        }
+      ],
+      "steps": [
+        {
+          "action": "Очередь ТЦ и жильё; начни с ближайшей доступной еды",
+          "targetTimeSeconds": 30,
+          "note": "Вариант открыт по наблюдаемой категории животных, а не по доказанной доступности твоей базе."
+        },
+        {
+          "action": "Шесть живых крестьян",
+          "targetTimeSeconds": 75,
+          "targetVillagers": 6
+        },
+        {
+          "action": "Не менее шести работников на еде",
+          "targetTimeSeconds": 90,
+          "allocation": {
+            "food": 6,
+            "wood": 0,
+            "gold": 0,
+            "stone": 0
+          },
+          "note": "Учебный запас на подход. Это не требование шести на овцах."
+        },
+        {
+          "action": "Четыре лесоруба; планируй пункты сдачи",
+          "targetTimeSeconds": 210,
+          "allocation": {
+            "food": 0,
+            "wood": 4,
+            "gold": 0,
+            "stone": 0
+          }
+        },
+        {
+          "action": "Оцени маршрут охоты; подгоняй животных только если это безопасно",
+          "targetTimeSeconds": 270,
+          "note": "Наблюдение минимум трёх животных не гарантирует сохранившийся запас пищи, свободный путь или успешный подгон. Если не хватает еды для ТЦ, используй овец или другую доступную пищу."
+        },
+        {
+          "action": "Мельница и лесопилка; продолжай выпуск крестьян",
+          "targetTimeSeconds": 390,
+          "unitGoals": [
+            {
+              "objectId": 68,
+              "count": 1,
+              "label": "Мельница"
+            },
+            {
+              "objectId": 562,
+              "count": 1,
+              "label": "Лесопилка"
+            }
+          ]
+        },
+        {
+          "action": "Не менее 26 живых крестьян",
+          "targetTimeSeconds": 660,
+          "targetVillagers": 26,
+          "note": "Учебная численность, не утверждение о самом быстром открытии с этой едой."
+        },
+        {
+          "action": "Закончи Loom, затем нажимай Феодал",
+          "targetTimeSeconds": 690,
+          "technologyGoals": [
+            {
+              "technologyId": 22,
+              "label": "Ткацкий станок / Loom"
+            }
+          ],
+          "note": "Проверяется только завершённый Loom, не нажатие эпохи."
+        },
+        {
+          "action": "Достигни Феодальной эпохи",
+          "targetTimeSeconds": 840,
+          "technologyGoals": [
+            {
+              "technologyId": 101,
+              "label": "Феодальная эпоха"
+            }
+          ]
+        },
+        {
+          "action": "Рынок, кузница и не менее 28 крестьян",
+          "targetTimeSeconds": 920,
+          "targetVillagers": 28,
+          "unitGoals": [
+            {
+              "objectId": 84,
+              "count": 1,
+              "label": "Рынок"
+            },
+            {
+              "objectId": 103,
+              "count": 1,
+              "label": "Кузница"
+            }
+          ]
+        },
+        {
+          "action": "По готовности еды и золота нажми Замки",
+          "targetTimeSeconds": 950,
+          "note": "Сроки — учебные. Строительства должны быть завершены; запас ресурсов проверяй в игре."
+        },
+        {
+          "action": "Достигни Замковой эпохи",
+          "targetTimeSeconds": 1110,
+          "technologyGoals": [
+            {
+              "technologyId": 102,
+              "label": "Замковая эпоха"
+            }
+          ],
+          "note": "18:30 — редактируемый тренировочный срок, не результат эксперимента с видом животных."
+        }
+      ]
+    },
+    {
+      "id": "practice-fast-castle-small-game",
+      "name": "Fast Castle — мелкая дичь без ставки на подгон (учебный)",
+      "civilizations": [
+        "portuguese",
+        "turks",
+        "spanish",
+        "byzantines",
+        "magyars",
+        "berbers"
+      ],
+      "map": "Безопасная сухопутная тренировка",
+      "mapScriptFile": "Arena.rms",
+      "strategy": "Food adaptation → Castle",
+      "strategyFamily": "fast-castle",
+      "startingFoodRequirements": [
+        {
+          "kind": "small-game",
+          "minCount": 3
+        }
+      ],
+      "planStatus": "practice-targets",
+      "description": "Компактная учебная адаптация для шести цивилизаций с проверенными обычными пунктами сдачи. Все сроки наши тренировочные, не авторский оптимизированный билд. Требование означает положительное наблюдение категории и количества; оно не гарантирует сохранившийся запас пищи, безопасный путь или выполненный подгон. При неизвестных наблюдениях выбирай общий план. ТЦ не должен простаивать ради экономии овец.",
+      "sources": [
+        {
+          "title": "Age of Empires — Advancing to the Next Age (official)",
+          "url": "https://www.ageofempires.com/learn-to-play/advancing-aoe2/"
+        },
+        {
+          "title": "SiegeEngineers — extracted game data; object and technology availability",
+          "url": "https://github.com/SiegeEngineers/aoe2techtree/blob/master/data/data.json"
+        },
+        {
+          "title": "Morley Games — classic Fast Castle skeleton; food variants are our practice adaptations",
+          "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=2360858024"
+        },
+        {
+          "title": "Age of Empires — food categories and gathering (official)",
+          "url": "https://www.ageofempires.com/learn-to-play/control-resources-aoe2/"
+        },
+        {
+          "title": "Age of Empires — Update 153015: unpushable hares",
+          "url": "https://www.ageofempires.com/news/age-of-empires-ii-definitive-edition-update-153015/"
+        },
+        {
+          "title": "Age of Empires — Update 188329: chicken/rabbit funneling removed",
+          "url": "https://www.ageofempires.com/news/age-of-empires-ii-definitive-edition-update-188329/"
+        }
+      ],
+      "steps": [
+        {
+          "action": "Очередь ТЦ и жильё; начни с ближайшей доступной еды",
+          "targetTimeSeconds": 30,
+          "note": "Вариант открыт по наблюдаемой категории животных, а не по доказанной доступности твоей базе."
+        },
+        {
+          "action": "Шесть живых крестьян",
+          "targetTimeSeconds": 75,
+          "targetVillagers": 6
+        },
+        {
+          "action": "Не менее шести работников на еде",
+          "targetTimeSeconds": 90,
+          "allocation": {
+            "food": 6,
+            "wood": 0,
+            "gold": 0,
+            "stone": 0
+          },
+          "note": "Учебный запас на подход. Это не требование шести на овцах."
+        },
+        {
+          "action": "Четыре лесоруба; планируй пункты сдачи",
+          "targetTimeSeconds": 210,
+          "allocation": {
+            "food": 0,
+            "wood": 4,
+            "gold": 0,
+            "stone": 0
+          }
+        },
+        {
+          "action": "Собирай доступную мелкую дичь на месте, не рассчитывая на подгон",
+          "targetTimeSeconds": 270,
+          "note": "Наблюдение мелкой дичи не исключает присутствия оленей или кабанов. Выбери безопасный источник и короткую сдачу; овцы остаются страховкой ТЦ."
+        },
+        {
+          "action": "Мельница и лесопилка; продолжай выпуск крестьян",
+          "targetTimeSeconds": 390,
+          "unitGoals": [
+            {
+              "objectId": 68,
+              "count": 1,
+              "label": "Мельница"
+            },
+            {
+              "objectId": 562,
+              "count": 1,
+              "label": "Лесопилка"
+            }
+          ]
+        },
+        {
+          "action": "Не менее 26 живых крестьян",
+          "targetTimeSeconds": 660,
+          "targetVillagers": 26,
+          "note": "Учебная численность, не утверждение о самом быстром открытии с этой едой."
+        },
+        {
+          "action": "Закончи Loom, затем нажимай Феодал",
+          "targetTimeSeconds": 690,
+          "technologyGoals": [
+            {
+              "technologyId": 22,
+              "label": "Ткацкий станок / Loom"
+            }
+          ],
+          "note": "Проверяется только завершённый Loom, не нажатие эпохи."
+        },
+        {
+          "action": "Достигни Феодальной эпохи",
+          "targetTimeSeconds": 840,
+          "technologyGoals": [
+            {
+              "technologyId": 101,
+              "label": "Феодальная эпоха"
+            }
+          ]
+        },
+        {
+          "action": "Рынок, кузница и не менее 28 крестьян",
+          "targetTimeSeconds": 920,
+          "targetVillagers": 28,
+          "unitGoals": [
+            {
+              "objectId": 84,
+              "count": 1,
+              "label": "Рынок"
+            },
+            {
+              "objectId": 103,
+              "count": 1,
+              "label": "Кузница"
+            }
+          ]
+        },
+        {
+          "action": "По готовности еды и золота нажми Замки",
+          "targetTimeSeconds": 950,
+          "note": "Сроки — учебные. Строительства должны быть завершены; запас ресурсов проверяй в игре."
+        },
+        {
+          "action": "Достигни Замковой эпохи",
+          "targetTimeSeconds": 1110,
+          "technologyGoals": [
+            {
+              "technologyId": 102,
+              "label": "Замковая эпоха"
+            }
+          ],
+          "note": "18:30 — редактируемый тренировочный срок, не результат эксперимента с видом животных."
+        }
+      ]
+    },
+    {
+      "id": "practice-fast-imperial-pushable-hunt",
+      "name": "Fast Imperial — охота с возможным подгоном (учебный)",
+      "civilizations": [
+        "portuguese",
+        "turks",
+        "spanish",
+        "byzantines",
+        "magyars",
+        "berbers"
+      ],
+      "map": "Безопасная сухопутная тренировка",
+      "mapScriptFile": "Arena.rms",
+      "strategy": "Food adaptation → Imperial",
+      "strategyFamily": "fast-imperial",
+      "startingFoodRequirements": [
+        {
+          "kind": "pushable-hunt",
+          "minCount": 3
+        }
+      ],
+      "planStatus": "practice-targets",
+      "description": "Компактная учебная адаптация для шести цивилизаций с проверенными обычными пунктами сдачи. Все сроки наши тренировочные, не авторский оптимизированный билд. Требование означает положительное наблюдение категории и количества; оно не гарантирует сохранившийся запас пищи, безопасный путь или выполненный подгон. При неизвестных наблюдениях выбирай общий план. ТЦ не должен простаивать ради экономии овец.",
+      "sources": [
+        {
+          "title": "Age of Empires — Advancing to the Next Age (official)",
+          "url": "https://www.ageofempires.com/learn-to-play/advancing-aoe2/"
+        },
+        {
+          "title": "SiegeEngineers — extracted game data; object and technology availability",
+          "url": "https://github.com/SiegeEngineers/aoe2techtree/blob/master/data/data.json"
+        },
+        {
+          "title": "Morley Games — classic Fast Castle skeleton; food variants are our practice adaptations",
+          "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=2360858024"
+        },
+        {
+          "title": "Age of Empires — food categories and gathering (official)",
+          "url": "https://www.ageofempires.com/learn-to-play/control-resources-aoe2/"
+        },
+        {
+          "title": "Age of Empires — Update 153015: unpushable hares",
+          "url": "https://www.ageofempires.com/news/age-of-empires-ii-definitive-edition-update-153015/"
+        },
+        {
+          "title": "Age of Empires — Update 188329: chicken/rabbit funneling removed",
+          "url": "https://www.ageofempires.com/news/age-of-empires-ii-definitive-edition-update-188329/"
+        }
+      ],
+      "steps": [
+        {
+          "action": "Очередь ТЦ и жильё; начни с ближайшей доступной еды",
+          "targetTimeSeconds": 30,
+          "note": "Вариант открыт по наблюдаемой категории животных, а не по доказанной доступности твоей базе."
+        },
+        {
+          "action": "Шесть живых крестьян",
+          "targetTimeSeconds": 75,
+          "targetVillagers": 6
+        },
+        {
+          "action": "Не менее шести работников на еде",
+          "targetTimeSeconds": 90,
+          "allocation": {
+            "food": 6,
+            "wood": 0,
+            "gold": 0,
+            "stone": 0
+          },
+          "note": "Учебный запас на подход. Это не требование шести на овцах."
+        },
+        {
+          "action": "Четыре лесоруба; планируй пункты сдачи",
+          "targetTimeSeconds": 210,
+          "allocation": {
+            "food": 0,
+            "wood": 4,
+            "gold": 0,
+            "stone": 0
+          }
+        },
+        {
+          "action": "Оцени маршрут охоты; подгоняй животных только если это безопасно",
+          "targetTimeSeconds": 270,
+          "note": "Наблюдение минимум трёх животных не гарантирует сохранившийся запас пищи, свободный путь или успешный подгон. Если не хватает еды для ТЦ, используй овец или другую доступную пищу."
+        },
+        {
+          "action": "Мельница и лесопилка; продолжай выпуск крестьян",
+          "targetTimeSeconds": 390,
+          "unitGoals": [
+            {
+              "objectId": 68,
+              "count": 1,
+              "label": "Мельница"
+            },
+            {
+              "objectId": 562,
+              "count": 1,
+              "label": "Лесопилка"
+            }
+          ]
+        },
+        {
+          "action": "Не менее 26 живых крестьян",
+          "targetTimeSeconds": 660,
+          "targetVillagers": 26,
+          "note": "Учебная численность, не утверждение о самом быстром открытии с этой едой."
+        },
+        {
+          "action": "Закончи Loom, затем нажимай Феодал",
+          "targetTimeSeconds": 690,
+          "technologyGoals": [
+            {
+              "technologyId": 22,
+              "label": "Ткацкий станок / Loom"
+            }
+          ],
+          "note": "Проверяется только завершённый Loom, не нажатие эпохи."
+        },
+        {
+          "action": "Достигни Феодальной эпохи",
+          "targetTimeSeconds": 840,
+          "technologyGoals": [
+            {
+              "technologyId": 101,
+              "label": "Феодальная эпоха"
+            }
+          ]
+        },
+        {
+          "action": "Рынок, кузница и не менее 28 крестьян",
+          "targetTimeSeconds": 920,
+          "targetVillagers": 28,
+          "unitGoals": [
+            {
+              "objectId": 84,
+              "count": 1,
+              "label": "Рынок"
+            },
+            {
+              "objectId": 103,
+              "count": 1,
+              "label": "Кузница"
+            }
+          ]
+        },
+        {
+          "action": "По готовности еды и золота нажми Замки",
+          "targetTimeSeconds": 950,
+          "note": "Сроки — учебные. Строительства должны быть завершены; запас ресурсов проверяй в игре."
+        },
+        {
+          "action": "Достигни Замковой эпохи",
+          "targetTimeSeconds": 1110,
+          "technologyGoals": [
+            {
+              "technologyId": 102,
+              "label": "Замковая эпоха"
+            }
+          ],
+          "note": "18:30 — редактируемый тренировочный срок, не результат эксперимента с видом животных."
+        },
+        {
+          "action": "32 живых крестьянина; усили еду и золото",
+          "targetTimeSeconds": 1260,
+          "targetVillagers": 32,
+          "allocation": {
+            "food": 16,
+            "wood": 6,
+            "gold": 6,
+            "stone": 0
+          },
+          "note": "Приблизительные минимумы роли, не ровно заданное число работников."
+        },
+        {
+          "action": "Университет и осадная мастерская",
+          "targetTimeSeconds": 1350,
+          "unitGoals": [
+            {
+              "objectId": 209,
+              "count": 1,
+              "label": "Университет"
+            },
+            {
+              "objectId": 49,
+              "count": 1,
+              "label": "Осадная мастерская"
+            }
+          ]
+        },
+        {
+          "action": "Нажми Империал по фактической цене в ТЦ",
+          "targetTimeSeconds": 1450,
+          "note": "Византийская скидка на Империал сохраняется. Не приписывай всем одинаковые расходы."
+        },
+        {
+          "action": "Достигни Имперской эпохи",
+          "targetTimeSeconds": 1650,
+          "technologyGoals": [
+            {
+              "technologyId": 103,
+              "label": "Имперская эпоха"
+            }
+          ],
+          "note": "27:30 — учебная цель. Военное продолжение и Chemistry не объявлены универсальными."
+        }
+      ]
+    },
+    {
+      "id": "practice-fast-imperial-small-game",
+      "name": "Fast Imperial — мелкая дичь без ставки на подгон (учебный)",
+      "civilizations": [
+        "portuguese",
+        "turks",
+        "spanish",
+        "byzantines",
+        "magyars",
+        "berbers"
+      ],
+      "map": "Безопасная сухопутная тренировка",
+      "mapScriptFile": "Arena.rms",
+      "strategy": "Food adaptation → Imperial",
+      "strategyFamily": "fast-imperial",
+      "startingFoodRequirements": [
+        {
+          "kind": "small-game",
+          "minCount": 3
+        }
+      ],
+      "planStatus": "practice-targets",
+      "description": "Компактная учебная адаптация для шести цивилизаций с проверенными обычными пунктами сдачи. Все сроки наши тренировочные, не авторский оптимизированный билд. Требование означает положительное наблюдение категории и количества; оно не гарантирует сохранившийся запас пищи, безопасный путь или выполненный подгон. При неизвестных наблюдениях выбирай общий план. ТЦ не должен простаивать ради экономии овец.",
+      "sources": [
+        {
+          "title": "Age of Empires — Advancing to the Next Age (official)",
+          "url": "https://www.ageofempires.com/learn-to-play/advancing-aoe2/"
+        },
+        {
+          "title": "SiegeEngineers — extracted game data; object and technology availability",
+          "url": "https://github.com/SiegeEngineers/aoe2techtree/blob/master/data/data.json"
+        },
+        {
+          "title": "Morley Games — classic Fast Castle skeleton; food variants are our practice adaptations",
+          "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=2360858024"
+        },
+        {
+          "title": "Age of Empires — food categories and gathering (official)",
+          "url": "https://www.ageofempires.com/learn-to-play/control-resources-aoe2/"
+        },
+        {
+          "title": "Age of Empires — Update 153015: unpushable hares",
+          "url": "https://www.ageofempires.com/news/age-of-empires-ii-definitive-edition-update-153015/"
+        },
+        {
+          "title": "Age of Empires — Update 188329: chicken/rabbit funneling removed",
+          "url": "https://www.ageofempires.com/news/age-of-empires-ii-definitive-edition-update-188329/"
+        }
+      ],
+      "steps": [
+        {
+          "action": "Очередь ТЦ и жильё; начни с ближайшей доступной еды",
+          "targetTimeSeconds": 30,
+          "note": "Вариант открыт по наблюдаемой категории животных, а не по доказанной доступности твоей базе."
+        },
+        {
+          "action": "Шесть живых крестьян",
+          "targetTimeSeconds": 75,
+          "targetVillagers": 6
+        },
+        {
+          "action": "Не менее шести работников на еде",
+          "targetTimeSeconds": 90,
+          "allocation": {
+            "food": 6,
+            "wood": 0,
+            "gold": 0,
+            "stone": 0
+          },
+          "note": "Учебный запас на подход. Это не требование шести на овцах."
+        },
+        {
+          "action": "Четыре лесоруба; планируй пункты сдачи",
+          "targetTimeSeconds": 210,
+          "allocation": {
+            "food": 0,
+            "wood": 4,
+            "gold": 0,
+            "stone": 0
+          }
+        },
+        {
+          "action": "Собирай доступную мелкую дичь на месте, не рассчитывая на подгон",
+          "targetTimeSeconds": 270,
+          "note": "Наблюдение мелкой дичи не исключает присутствия оленей или кабанов. Выбери безопасный источник и короткую сдачу; овцы остаются страховкой ТЦ."
+        },
+        {
+          "action": "Мельница и лесопилка; продолжай выпуск крестьян",
+          "targetTimeSeconds": 390,
+          "unitGoals": [
+            {
+              "objectId": 68,
+              "count": 1,
+              "label": "Мельница"
+            },
+            {
+              "objectId": 562,
+              "count": 1,
+              "label": "Лесопилка"
+            }
+          ]
+        },
+        {
+          "action": "Не менее 26 живых крестьян",
+          "targetTimeSeconds": 660,
+          "targetVillagers": 26,
+          "note": "Учебная численность, не утверждение о самом быстром открытии с этой едой."
+        },
+        {
+          "action": "Закончи Loom, затем нажимай Феодал",
+          "targetTimeSeconds": 690,
+          "technologyGoals": [
+            {
+              "technologyId": 22,
+              "label": "Ткацкий станок / Loom"
+            }
+          ],
+          "note": "Проверяется только завершённый Loom, не нажатие эпохи."
+        },
+        {
+          "action": "Достигни Феодальной эпохи",
+          "targetTimeSeconds": 840,
+          "technologyGoals": [
+            {
+              "technologyId": 101,
+              "label": "Феодальная эпоха"
+            }
+          ]
+        },
+        {
+          "action": "Рынок, кузница и не менее 28 крестьян",
+          "targetTimeSeconds": 920,
+          "targetVillagers": 28,
+          "unitGoals": [
+            {
+              "objectId": 84,
+              "count": 1,
+              "label": "Рынок"
+            },
+            {
+              "objectId": 103,
+              "count": 1,
+              "label": "Кузница"
+            }
+          ]
+        },
+        {
+          "action": "По готовности еды и золота нажми Замки",
+          "targetTimeSeconds": 950,
+          "note": "Сроки — учебные. Строительства должны быть завершены; запас ресурсов проверяй в игре."
+        },
+        {
+          "action": "Достигни Замковой эпохи",
+          "targetTimeSeconds": 1110,
+          "technologyGoals": [
+            {
+              "technologyId": 102,
+              "label": "Замковая эпоха"
+            }
+          ],
+          "note": "18:30 — редактируемый тренировочный срок, не результат эксперимента с видом животных."
+        },
+        {
+          "action": "32 живых крестьянина; усили еду и золото",
+          "targetTimeSeconds": 1260,
+          "targetVillagers": 32,
+          "allocation": {
+            "food": 16,
+            "wood": 6,
+            "gold": 6,
+            "stone": 0
+          },
+          "note": "Приблизительные минимумы роли, не ровно заданное число работников."
+        },
+        {
+          "action": "Университет и осадная мастерская",
+          "targetTimeSeconds": 1350,
+          "unitGoals": [
+            {
+              "objectId": 209,
+              "count": 1,
+              "label": "Университет"
+            },
+            {
+              "objectId": 49,
+              "count": 1,
+              "label": "Осадная мастерская"
+            }
+          ]
+        },
+        {
+          "action": "Нажми Империал по фактической цене в ТЦ",
+          "targetTimeSeconds": 1450,
+          "note": "Византийская скидка на Империал сохраняется. Не приписывай всем одинаковые расходы."
+        },
+        {
+          "action": "Достигни Имперской эпохи",
+          "targetTimeSeconds": 1650,
+          "technologyGoals": [
+            {
+              "technologyId": 103,
+              "label": "Имперская эпоха"
+            }
+          ],
+          "note": "27:30 — учебная цель. Военное продолжение и Chemistry не объявлены универсальными."
         }
       ]
     }

@@ -115,6 +115,10 @@ struct BuildOrder: Codable, Identifiable, Equatable {
     let steps: [BuildStep]
     let sources: [BuildSource]?
     let planStatus: String?
+    /// Stable grouping ID for independently selectable variants, e.g. fast-castle.
+    let strategyFamily: String?
+    /// Positive observed-food requirements. Omitted/empty means a generic plan.
+    let startingFoodRequirements: [StartingFoodRequirement]?
 
     // Legacy property retained for existing UI call sites and integrations.
     var civilization: String {
@@ -123,7 +127,8 @@ struct BuildOrder: Codable, Identifiable, Equatable {
 
     init(id: String, name: String, civilizations: [String], map: String,
          mapScriptFile: String? = nil, strategy: String, description: String, steps: [BuildStep],
-         sources: [BuildSource]? = nil, planStatus: String? = nil) {
+         sources: [BuildSource]? = nil, planStatus: String? = nil,
+         strategyFamily: String? = nil, startingFoodRequirements: [StartingFoodRequirement]? = nil) {
         self.id = id
         self.name = name
         self.civilizations = civilizations.map { CivilizationCatalog.resolve($0)?.id ?? $0 }
@@ -134,22 +139,26 @@ struct BuildOrder: Codable, Identifiable, Equatable {
         self.steps = steps
         self.sources = sources
         self.planStatus = planStatus
+        self.strategyFamily = strategyFamily
+        self.startingFoodRequirements = startingFoodRequirements
     }
 
     init(id: String, name: String, civilization: String, map: String,
          mapScriptFile: String? = nil, strategy: String, description: String, steps: [BuildStep],
-         sources: [BuildSource]? = nil, planStatus: String? = nil) {
+         sources: [BuildSource]? = nil, planStatus: String? = nil,
+         strategyFamily: String? = nil, startingFoodRequirements: [StartingFoodRequirement]? = nil) {
         // Older call sites may pass the legacy comma-separated display label.
         let names = civilization.split(separator: ",", omittingEmptySubsequences: false)
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
         self.init(id: id, name: name, civilizations: names, map: map,
                   mapScriptFile: mapScriptFile, strategy: strategy, description: description,
-                  steps: steps, sources: sources, planStatus: planStatus)
+                  steps: steps, sources: sources, planStatus: planStatus,
+                  strategyFamily: strategyFamily, startingFoodRequirements: startingFoodRequirements)
     }
 
     enum CodingKeys: String, CodingKey {
         case id, name, civilizations, civilization, map, mapScriptFile, strategy, description, steps
-        case sources, planStatus
+        case sources, planStatus, strategyFamily, startingFoodRequirements
     }
 
     init(from decoder: Decoder) throws {
@@ -172,6 +181,8 @@ struct BuildOrder: Codable, Identifiable, Equatable {
         steps = try c.decode([BuildStep].self, forKey: .steps)
         sources = try c.decodeIfPresent([BuildSource].self, forKey: .sources)
         planStatus = try c.decodeIfPresent(String.self, forKey: .planStatus)
+        strategyFamily = try c.decodeIfPresent(String.self, forKey: .strategyFamily)
+        startingFoodRequirements = try c.decodeIfPresent([StartingFoodRequirement].self, forKey: .startingFoodRequirements)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -186,6 +197,8 @@ struct BuildOrder: Codable, Identifiable, Equatable {
         try c.encode(steps, forKey: .steps)
         try c.encodeIfPresent(sources, forKey: .sources)
         try c.encodeIfPresent(planStatus, forKey: .planStatus)
+        try c.encodeIfPresent(strategyFamily, forKey: .strategyFamily)
+        try c.encodeIfPresent(startingFoodRequirements, forKey: .startingFoodRequirements)
     }
 
     func supports(civilizationID: String) -> Bool {
@@ -202,7 +215,8 @@ struct BuildOrder: Codable, Identifiable, Equatable {
         guard !activeSteps.isEmpty else { return nil }
         return BuildOrder(id: id, name: name, civilizations: [canonical], map: map,
                           mapScriptFile: mapScriptFile, strategy: strategy, description: description,
-                          steps: activeSteps, sources: sources, planStatus: planStatus)
+                          steps: activeSteps, sources: sources, planStatus: planStatus,
+                          strategyFamily: strategyFamily, startingFoodRequirements: startingFoodRequirements)
     }
 
     var hasValidGoalsAndTimeline: Bool {
@@ -216,6 +230,25 @@ struct BuildOrder: Codable, Identifiable, Equatable {
               !map.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               !strategy.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return "\(context): id, name, map и strategy не могут быть пустыми."
+        }
+        if let family = strategyFamily {
+            let segments = family.split(separator: "-", omittingEmptySubsequences: false)
+            let isKebabID = !family.isEmpty && segments.allSatisfy { segment in
+                !segment.isEmpty && segment.utf8.allSatisfy { byte in
+                    (97...122).contains(byte) || (48...57).contains(byte)
+                }
+            }
+            guard isKebabID else {
+                return "\(context): strategyFamily должен быть непустым kebab-case ID, например fast-castle."
+            }
+        }
+        if let requirements = startingFoodRequirements {
+            guard requirements.allSatisfy(\.isValid) else {
+                return "\(context): startingFoodRequirements.minCount должен быть целым числом от 1 до 32."
+            }
+            guard Set(requirements.map(\.kind)).count == requirements.count else {
+                return "\(context): в startingFoodRequirements повторяется один и тот же kind."
+            }
         }
         if let file = mapScriptFile,
            !(file.lowercased().hasSuffix(".rms") && file.allSatisfy({
@@ -323,10 +356,12 @@ enum BuildOrderLibrary {
 
     /// Unknown/missing civilization is intentionally fail-closed. Keep the
     /// original catalog and call this again when the observed civ changes.
-    static func eligible(_ builds: [BuildOrder], civilizationID: String?) -> [BuildOrder] {
+    static func eligible(_ builds: [BuildOrder], civilizationID: String?,
+                         startingFoodEvidence: StartingFoodEvidence = .unknown) -> [BuildOrder] {
         guard let civilizationID,
               let canonical = CivilizationCatalog.resolve(civilizationID)?.id else { return [] }
-        return builds.compactMap { $0.resolved(for: canonical) }
+        return builds.filter { startingFoodEvidence.satisfies(requirements: $0.startingFoodRequirements ?? []) }
+            .compactMap { $0.resolved(for: canonical) }
     }
 
     private static func parse(_ data: Data, allowEmpty: Bool) throws -> BuildOrderDocument {
@@ -371,6 +406,16 @@ enum BuildOrderLibrary {
             }
         }
 
+        func requireArrayIfPresent(_ object: [String: Any], key: String,
+                                   path: String, context: String) throws {
+            guard let value = object[key] else { return }
+            guard value is [Any] else {
+                throw LibraryError.invalidDocument(
+                    "\(path).\(key)\(context): поле должно быть массивом; убери поле, если условие не требуется."
+                )
+            }
+        }
+
         try check(root, allowed: ["schemaVersion", "civilizations", "builds"], path: "$")
         for (index, declaration) in ((root["civilizations"] as? [[String: Any]]) ?? []).enumerated() {
             try check(declaration, allowed: ["id", "name", "xsID"], path: "$.civilizations[\(index)]")
@@ -379,8 +424,23 @@ enum BuildOrderLibrary {
             let buildPath = "$.builds[\(buildIndex)]"
             let context = (build["id"] as? String).map { " (билд «\($0)»)" } ?? ""
             try check(build, allowed: ["id", "name", "civilizations", "map", "mapScriptFile",
-                                       "strategy", "description", "steps", "sources", "planStatus"],
+                                       "strategy", "description", "steps", "sources", "planStatus",
+                                       "strategyFamily", "startingFoodRequirements"],
                       path: buildPath, context: context)
+            // decodeIfPresent treats JSON null as an omitted condition. That
+            // would silently loosen a hand-edited restriction, so v2 fields
+            // must have their declared type whenever the key is present.
+            try requireArrayIfPresent(build, key: "startingFoodRequirements",
+                                      path: buildPath, context: context)
+            if let family = build["strategyFamily"], !(family is String) {
+                throw LibraryError.invalidDocument(
+                    "\(buildPath).strategyFamily\(context): поле должно быть непустым строковым kebab-case ID."
+                )
+            }
+            for (requirementIndex, requirement) in ((build["startingFoodRequirements"] as? [[String: Any]]) ?? []).enumerated() {
+                try check(requirement, allowed: ["kind", "minCount"],
+                          path: "\(buildPath).startingFoodRequirements[\(requirementIndex)]", context: context)
+            }
             for (sourceIndex, source) in ((build["sources"] as? [[String: Any]]) ?? []).enumerated() {
                 try check(source, allowed: ["title", "url"], path: "\(buildPath).sources[\(sourceIndex)]",
                           context: context)
@@ -390,6 +450,9 @@ enum BuildOrderLibrary {
                 try check(step, allowed: ["action", "targetVillagers", "targetTimeSeconds", "allocation",
                                           "note", "unitGoals", "includeOnly", "exclude", "technologyGoals"],
                           path: stepPath, context: context)
+                for selector in ["includeOnly", "exclude"] {
+                    try requireArrayIfPresent(step, key: selector, path: stepPath, context: context)
+                }
                 if let allocation = step["allocation"] as? [String: Any] {
                     try check(allocation, allowed: ["food", "wood", "gold", "stone"],
                               path: "\(stepPath).allocation", context: context)
@@ -476,7 +539,8 @@ enum BuildOrderLibrary {
         return BuildOrder(id: build.id, name: build.name, civilizations: civilizations,
                           map: build.map, mapScriptFile: build.mapScriptFile,
                           strategy: build.strategy, description: build.description,
-                          steps: steps, sources: build.sources, planStatus: build.planStatus)
+                          steps: steps, sources: build.sources, planStatus: build.planStatus,
+                          strategyFamily: build.strategyFamily, startingFoodRequirements: build.startingFoodRequirements)
     }
 
     static func bundled() -> [BuildOrder] {

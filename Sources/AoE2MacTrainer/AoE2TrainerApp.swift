@@ -10,6 +10,7 @@ final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private var buildSubmenu: NSMenu?
     private var civilizationSubmenu: NSMenu?
+    private var foodSubmenu: NSMenu?
     private var timer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -72,6 +73,13 @@ final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(civItem)
         menu.setSubmenu(civMenu, for: civItem)
 
+        let foodMenu = NSMenu(title: "PREVIEW: стартовая еда вручную")
+        foodSubmenu = foodMenu
+        populateFoodMenu()
+        let foodItem = NSMenuItem(title: "PREVIEW: стартовая еда вручную", action: nil, keyEquivalent: "")
+        menu.addItem(foodItem)
+        menu.setSubmenu(foodMenu, for: foodItem)
+
         let submenu = NSMenu(title: "PREVIEW: подходящие билды")
         buildSubmenu = submenu
         populateBuildMenu()
@@ -133,7 +141,8 @@ final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
         submenu.addItem(none)
         submenu.addItem(.separator())
         for civilization in CivilizationCatalog.standard {
-            let count = BuildOrderLibrary.eligible(state.catalog, civilizationID: civilization.id).count
+            let count = BuildOrderLibrary.eligible(state.catalog, civilizationID: civilization.id,
+                                                  startingFoodEvidence: state.previewFoodEvidence).count
             let entry = NSMenuItem(title: "\(civilization.name) · билдов: \(count)",
                                   action: #selector(selectPreviewCivilization(_:)), keyEquivalent: "")
             entry.representedObject = civilization.id
@@ -143,18 +152,57 @@ final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    private func populateFoodMenu() {
+        guard let submenu = foodSubmenu else { return }
+        submenu.removeAllItems()
+        addInfo("Ручные допущения PREVIEW, не данные игры", to: submenu)
+        addInfo("0 = не наблюдались / неизвестно; не «нет на карте»", to: submenu)
+        let kinds: [(String, Int, Selector)] = [
+            ("Толкаемая дичь", state.previewFoodEvidence.pushableHuntCount,
+             #selector(setPreviewPushableHuntCount(_:))),
+            ("Мелкая дичь", state.previewFoodEvidence.smallGameCount,
+             #selector(setPreviewSmallGameCount(_:)))
+        ]
+        for (name, selectedCount, selector) in kinds {
+            let countMenu = NSMenu(title: name)
+            for count in [0, 1, 2, 3, 4, 6] {
+                let title = count == 0 ? "Не наблюдались / неизвестно" : "Вручную: \(count)"
+                let entry = NSMenuItem(title: title, action: selector, keyEquivalent: "")
+                entry.tag = count
+                entry.target = self
+                entry.state = selectedCount == count ? .on : .off
+                countMenu.addItem(entry)
+            }
+            let suffix = selectedCount == 0 ? "?" : String(selectedCount)
+            let kindItem = NSMenuItem(title: "\(name): \(suffix)", action: nil, keyEquivalent: "")
+            submenu.addItem(kindItem)
+            submenu.setSubmenu(countMenu, for: kindItem)
+        }
+    }
+
     private func populateBuildMenu() {
         guard let submenu = buildSubmenu else { return }
         submenu.removeAllItems()
+        if let notice = state.selectionNotice {
+            addInfo(notice, to: submenu)
+            submenu.addItem(.separator())
+        }
+        if state.selectedBuild == nil, let requested = state.requestedBuildID {
+            let title = state.unavailableRequestedBuild?.name ?? requested
+            addInfo("Запрошенный план недоступен: \(title)", to: submenu)
+            addInfo("Он не заменён другим; выбери вариант явно", to: submenu)
+            submenu.addItem(.separator())
+        }
         if state.builds.isEmpty {
             let message = state.previewCivilizationID == nil
                 ? "Сначала выбери PREVIEW-цивилизацию"
-                : "Для этой цивилизации нет подходящих билдов"
+                : "Нет билдов под цивилизацию и допущения еды"
             addInfo(message, to: submenu)
             return
         }
         for (index, build) in state.builds.enumerated() {
-            let entry = NSMenuItem(title: "\(build.name) · \(build.map)",
+            let family = build.strategyFamily.map { " · \($0)" } ?? ""
+            let entry = NSMenuItem(title: "\(build.name) · \(build.map)\(family)",
                                    action: #selector(selectBuild(_:)), keyEquivalent: "")
             entry.tag = index
             entry.state = index == state.selectedBuildIndex ? .on : .off
@@ -176,6 +224,7 @@ final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
         do {
             try state.reloadBuilds()
             populateCivilizationMenu()
+            populateFoodMenu()
             populateBuildMenu()
         } catch {
             showMessage("Ошибка в пользовательском builds.json",
@@ -225,7 +274,7 @@ final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
         guard let folder = localModFolder() else { return }
         do {
             let location = try TrainingModPackager.install(
-                catalog: state.catalog, preferredBuildID: state.selectedBuild?.id,
+                catalog: state.catalog, preferredBuildID: state.exportPreferredBuildID,
                 source: source, into: folder
             )
             UserDefaults.standard.set(folder.path, forKey: "AoE2Trainer.localModsFolder")
@@ -233,6 +282,7 @@ final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
             let alert = NSAlert()
             alert.messageText = "Локальный XS-мод каталога создан"
             alert.informativeText = "\(location.path)\n\nПерезапусти AoE2, включи мод в Mods → My Mods / Installed Mods, затем Skirmish → Custom Map.\n\nВ мод включён весь каталог. XS определяет реальную цивилизацию в игре и выбирает совместимый билд. Хоткеи приложения переключают только PREVIEW и не отправляют команды в XS. Загрузка в нативной версии AoE2 для Mac ещё требует проверки."
+            alert.informativeText += "\n\nРучные цивилизация и количества дичи из PREVIEW не подставляются в данные игры. Экспортируется только предпочтение билда; XS проверяет его условия по собственным наблюдениям."
             alert.informativeText += "\n\n" + XSBuildExporter.textEncodingNotice
             alert.runModal()
         } catch {
@@ -265,11 +315,12 @@ final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
         guard ensureCatalogAvailable() else { return }
         do {
             let script = try XSBuildExporter.generate(builds: state.catalog,
-                                                      preferredBuildID: state.selectedBuild?.id)
+                                                      preferredBuildID: state.exportPreferredBuildID)
             let panel = NSSavePanel()
             panel.title = "Сохранить XS-модуль тренера"
             panel.nameFieldStringValue = "aoe2trainer_catalog.xs"
             panel.message = "Экспортируется весь исходный каталог, включая условия цивилизаций. Добавь #includeXS <имя файла> в свою RMS-карту. XS выбирает цивилизацию внутри игры; хоткеи оверлея управляют только PREVIEW.\n\n" + XSBuildExporter.textEncodingNotice
+            panel.message += "\n\nРучные количества дичи из PREVIEW не экспортируются как факты матча."
             if panel.runModal() == .OK, let url = panel.url {
                 try script.write(to: url, atomically: true, encoding: .utf8)
             }
@@ -288,6 +339,26 @@ final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func selectPreviewCivilization(_ sender: NSMenuItem) {
         state.selectPreviewCivilization(sender.representedObject as? String)
+        populateCivilizationMenu()
+        populateBuildMenu()
+    }
+
+    @objc private func setPreviewPushableHuntCount(_ sender: NSMenuItem) {
+        state.updatePreviewFoodEvidence(StartingFoodEvidence(
+            pushableHuntCount: sender.tag, smallGameCount: state.previewFoodEvidence.smallGameCount
+        ))
+        refreshPreviewMenus()
+    }
+
+    @objc private func setPreviewSmallGameCount(_ sender: NSMenuItem) {
+        state.updatePreviewFoodEvidence(StartingFoodEvidence(
+            pushableHuntCount: state.previewFoodEvidence.pushableHuntCount, smallGameCount: sender.tag
+        ))
+        refreshPreviewMenus()
+    }
+
+    private func refreshPreviewMenus() {
+        populateFoodMenu()
         populateCivilizationMenu()
         populateBuildMenu()
     }

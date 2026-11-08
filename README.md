@@ -6,11 +6,11 @@ A native macOS companion and **XS training module** for Age of Empires II: Defin
 
 | Component | Implemented behavior | Important limitation |
 | --- | --- | --- |
-| Generated XS module | Reads the actual local player's civilization and game clock; filters a complete build catalog; observes goals and rolling economy metrics; displays the current build inside the game | Requires a custom RMS/scenario that loads it; native Mac gameplay has not yet been tested |
-| macOS floating overlay | Click-through build preview, manual civilization selection, JSON reload, hotkeys, mod creation | **PREVIEW only: it is not receiving live XS telemetry**; its manual clock is an estimate |
-| JSON build catalog | Versioned declarations, civilization allowlists, conditional steps, timed goals, source metadata | A valid document is not proof that its timings are achievable in a match |
+| Generated XS module | Reads the actual local player's civilization and game clock; observes visible nearby starting hunt; filters a complete build catalog; observes goals and rolling economy metrics; displays the current build inside the game | Requires a custom RMS/scenario that loads it; native Mac gameplay has not yet been tested |
+| macOS floating overlay | Click-through build preview, manual civilization/food selection, JSON reload, hotkeys, mod creation | **PREVIEW only: it is not receiving live XS telemetry**; its manual clock and food inputs are not game observations |
+| JSON build catalog | Versioned declarations, civilization allowlists, conditional steps, positive food requirements, strategy families, timed goals, source metadata | A valid document is not proof that its timings are achievable in a match |
 
-The current library contains **9 reviewed training plans covering 27 explicitly listed civilizations**, including Scouts, Archers, Men-at-Arms → Archers, Fast Castle, Turkish Fast Imperial, and Khitan/Armenian/Georgian practice variants. The engine-ID registry covers more civilizations than the curated build library. It does **not** claim one optimized build for every civilization.
+The current library contains **15 training plans**. The original nine reviewed plans cover 27 explicitly listed civilizations, including Scouts, Archers, Men-at-Arms → Archers, Fast Castle, Turkish Fast Imperial, and Khitan/Armenian/Georgian practice variants. Two additional shared **FC/FI age-training plans cover all 56 registered civilizations**, with regional economic exceptions. Four compact food-sensitive FC/FI variants cover six reviewed normal-start civilizations. These are practice targets, **not 56 optimized military builds**. See the [coverage audit](docs/build-coverage-audit.md) for the remaining gaps.
 
 Still unimplemented: a verified live XS ↔ native-app bridge, exact TC idle time, automatic map detection, reliable boar-specific worker assignment, and replay/post-match analytics. **Control+Option+B does not yet change the running game's XS selection.**
 
@@ -32,7 +32,7 @@ The app appears as 🏰 in the menu bar. The transparent overlay passes clicks t
 2. Choose the local XS-mod creation menu and select **Arena**, **Arabia**, **Nomad**, or an existing `.rms`/`.rms2` that you own. A preview build does not need to be selected. **The entire catalog is exported**, not only the desktop's current filtered list.
 3. If exactly one native Feral profile is detected, the app proposes its `mods/local` directory. Otherwise choose that directory manually, or export elsewhere and move the generated folder later. Only new mod folders are created; installed game files and previous mods are never overwritten.
 4. Restart AoE2 if needed to refresh its custom-map list. Enable the local mod, then start a custom-map Skirmish against your desired AI difficulty. Select the generated `AoE2Trainer_*` map, **not** the unmodified standard map.
-5. XS reads the actual local player and civilization. It chooses the preferred build only if that build is eligible; otherwise it uses the first eligible build. An unsupported civilization displays **NO MATCHING BUILDS**, not an unrelated plan.
+5. XS reads the actual local player and civilization. An eligible preferred build is selected. A civ-compatible food variant waits for positive observations rather than silently becoming another plan. If the preferred build does not support the actual civilization, a same-family alternative may be selected with an explicit fallback notice; it never silently changes FC to FI. With no preferred build, a generic eligible plan is chosen first. No suitable choice remains visibly unavailable.
 
 The native macOS profile location the app checks is:
 
@@ -74,7 +74,7 @@ trainerPreviousStep()
 trainerResumeTimeline()
 ```
 
-Build switching skips ineligible civilizations and preserves first-observed goal timestamps. These functions are not keyboard listeners. A scenario can bind them to its own supported triggers; the generated RMS does not yet provide an interactive selector or a live connection to the app's hotkeys. In a plain exported RMS, choose the preferred plan before export.
+Build switching skips ineligible civilizations and unconfirmed food requirements and preserves first-observed goal timestamps. Scouting more food adds choices without replacing an active build or resetting its step. These functions are not keyboard listeners. A scenario can bind them to its own supported triggers; the generated RMS does not yet provide an interactive selector or a live connection to the app's hotkeys. In a plain exported RMS, choose the preferred plan before export.
 
 The game controls the placement of `xsDisplayInstructions`; arbitrary placement immediately below the resource bar is not implemented. Its live panel and the external macOS preview are separate displays.
 
@@ -97,6 +97,7 @@ Custom definitions live at `~/Library/Application Support/AoE2MacTrainer/builds.
       "map": "Арена",
       "mapScriptFile": "Arena.rms",
       "strategy": "Gunpowder practice",
+      "strategyFamily": "fast-imperial",
       "description": "Свободные учебные сроки, не оптимальный билд",
       "planStatus": "practice-targets",
       "steps": [
@@ -131,9 +132,31 @@ Rules:
 - Validation checks the timeline after resolving each civilization's steps, so mutually exclusive variants may have different times. Every allowed civilization must retain at least one step.
 - Unknown/no-current-civilization fails closed. Neither preview nor XS treats that as “show everything.”
 - `name` supplies the visible build title. `sources: [{"title": "...", "url": "https://..."}]` and `planStatus` preserve provenance.
+- Optional `strategyFamily` is a nonempty lowercase kebab-case ID such as `fast-castle` or `fast-imperial`. It identifies like-for-like alternatives; it does not turn an age-training exercise into an optimized military plan.
+- Optional `startingFoodRequirements` is an array of positive requirements. Each `kind` is `pushable-hunt` or `small-game`, with integer `minCount` from 1 through 32 and no duplicate kind. All listed requirements must hold. Omit the field (or use an empty array) for a food-independent plan.
 - Custom builds override bundled builds with the same `id`. A valid empty custom catalog adds no overrides. Invalid JSON does not silently fall back or partially load.
 
 Older root-array documents, the singular `civilization` field, and recognized Russian/English aliases are imported for compatibility. Legacy `Любая` expands to the known registry only during legacy import; v2 requires explicit declarations/allowlists. Existing custom files are never rewritten automatically.
+
+### Food-sensitive alternatives
+
+For example, a hunt variant can add the following build-level field while keeping an explicit civilization allowlist:
+
+```json
+"startingFoodRequirements": [
+  { "kind": "pushable-hunt", "minCount": 3 }
+]
+```
+
+Use `small-game` for the corresponding wild-chicken/hare variant. These are separate plans with their own instructions, not a blind substitution of one animal name for another. The current four sample variants support Portuguese, Turks, Spanish, Byzantines, Magyars and Berbers; the two generic FC/FI exercises remain available for the full registry.
+
+XS counts distinct **live animals observed in current local-player visibility**, within 24 tiles of the first own TC, during the first 600 game seconds. Regular deer-type hunt and wild small game use an explicit species whitelist. Herdable chickens and gold-bearing foxes are not mixed into those categories. Repeated sightings are deduplicated by instance ID; past observations remain after consumption. Zero means **not yet observed**, never proof of absence.
+
+The counters are historical observations, **not remaining food, a completed deer push, or a safety/reachability guarantee**. Seeing small game does not prove that deer are absent. Map names, seeds and a generic RMS wrapper do not reveal which local food branch was generated. Unsupported species and scan limits can undercount; incomplete observations are disclosed. See [food detection and its information boundary](docs/food-detection.md).
+
+The menu's food counts are manual preview inputs only and are **never exported as game facts**. They let you inspect conditional variants before a match. The generated XS module observes the actual game independently. A preferred food variant can wait for evidence; choose a generic plan before export if you want an immediately available opening in a plain RMS.
+
+Hunt-first instructions prioritize practical fast food while retaining sheep as a bridge. They must not encourage an idle TC just to minimize sheep consumption. Walking, drop-off, mill cost, scout attention and civilization bonuses all matter.
 
 ### Goal semantics
 
@@ -161,7 +184,7 @@ Worker assignment is inferred from unit targets/carried resources. Drop-off, idl
 
 ## Build library and review
 
-See [the source and review notes](docs/build-library-sources.md) for all nine plans, authors, timing assumptions, and civilization exceptions. `source-adapted` identifies an adaptation of an authored guide; `practice-targets` identifies deliberately loose exercise targets. **Neither label means match-verified.**
+See [the source and review notes](docs/build-library-sources.md) for all 15 plans, authors, timing assumptions, and civilization exceptions, and the [coverage audit](docs/build-coverage-audit.md) for per-family coverage and remaining military-build gaps. `source-adapted` identifies an adaptation of an authored guide; `practice-targets` identifies deliberately loose exercise targets. **Neither label means match-verified.**
 
 The Khitan plan accounts for pastures and the absence of Knights/Bloodlines. It is an early-game training variant, not a claimed optimized Mounted Trebuchet opening. Population, living villagers, and time spent researching at the TC are kept distinct.
 
@@ -170,7 +193,7 @@ The Khitan plan accounts for pastures and the absence of Knights/Bloodlines. It 
 | Keys | Preview action |
 | --- | --- |
 | Control + Option + N / P | Next / previous effective build step |
-| Control + Option + B | Next build eligible for the manually selected preview civilization |
+| Control + Option + B | Next build eligible for the manually selected preview civilization and food observations |
 | Control + Option + S | Start/pause estimated 1.7× clock |
 | Control + Option + R | Reset preview clock and step |
 | Control + Option + H | Show/hide overlay |
@@ -185,14 +208,15 @@ Local XS file input may cause multiplayer desynchronization unless all participa
 
 ## Validation and next steps
 
-GitHub Actions builds the app on macOS, runs Swift tests, generates the **actual full-catalog XS**, and checks that artifact with the pinned [XS Check](https://github.com/Divy1211/xs-check) CLI. Grammar/type checks catch errors that string assertions do not. Neither CI nor a successful `.app` build proves the module loads in AoE2 or measures the intended state.
+GitHub Actions assembles the runtime with its food-observer fragment for an early XS check, builds the app on macOS, runs Swift tests, generates the **actual full-catalog XS**, and checks that artifact with the pinned [XS Check](https://github.com/Divy1211/xs-check) CLI. Grammar/type checks catch errors that string assertions do not. Neither CI nor a successful `.app` build proves the module loads in AoE2 or measures the intended state.
 
 Remaining acceptance checks:
 
 1. Load the generated mod in native macOS AoE2 and verify the actual civ, title, game clock, completed-technology state and no-match behavior.
 2. Compare rolling rates and worker estimates with a controlled gathering exercise; verify gaps, restarts and age transitions.
-3. Validate in-game build/step selection and a safe external bridge, without OCR or memory access.
-4. Calibrate guide-derived and practice timelines in real training games. Defer replay/post-match features.
+3. Verify hidden, currently visible and explored-but-hidden animals; mixed hunt, repeat sightings, consumption, unknown species and the 24-tile/600-second observation boundaries. New discoveries must not change the chosen plan.
+4. Validate in-game build/step selection and a safe external bridge, without OCR or memory access.
+5. Calibrate guide-derived and practice timelines in real training games. Defer replay/post-match features.
 
 ## References and license
 

@@ -9,10 +9,13 @@ final class XSBuildExporterTests: XCTestCase {
         id: String = "test-plan",
         name: String = "Test plan",
         civilizations: [String] = ["portuguese"],
-        steps: [BuildStep] = [BuildStep(action: "Reach 6 villagers", targetVillagers: 6, targetTimeSeconds: 75)]
+        steps: [BuildStep] = [BuildStep(action: "Reach 6 villagers", targetVillagers: 6, targetTimeSeconds: 75)],
+        strategyFamily: String? = nil,
+        startingFoodRequirements: [StartingFoodRequirement]? = nil
     ) -> BuildOrder {
         BuildOrder(id: id, name: name, civilizations: civilizations,
-                   map: "Арена", strategy: "Fast Castle", description: "Test fixture", steps: steps)
+                   map: "Арена", strategy: "Fast Castle", description: "Test fixture", steps: steps,
+                   strategyFamily: strategyFamily, startingFoodRequirements: startingFoodRequirements)
     }
 
     func testBundledCatalogUsesRuntimeCivilizationAndStrictFiltering() throws {
@@ -20,6 +23,7 @@ final class XSBuildExporterTests: XCTestCase {
         XCTAssertFalse(builds.isEmpty)
         let script = try XSBuildExporter.generate(builds: builds)
         XCTAssertFalse(script.contains("// @CATALOG_SETUP@"))
+        XCTAssertFalse(script.contains("// @FOOD_OBSERVER@"))
         XCTAssertTrue(script.contains("trainerBuildCount = \(builds.count);"))
         XCTAssertTrue(script.contains("xsUnsyncGetLocalPlayerId()"))
         XCTAssertTrue(script.contains("xsGetPlayerCivilization(player)"))
@@ -160,7 +164,7 @@ final class XSBuildExporterTests: XCTestCase {
         XCTAssertTrue(script.contains("xsArraySetInt(trainerAllowedBuilds, 1, 1)"))
         XCTAssertTrue(script.contains("xsArraySetInt(trainerAllowedCivilizations, 1, 10)"))
         // Selection is taken from the already filtered list, never the raw ID.
-        XCTAssertTrue(script.contains("trainerSelectBuildSlot(preferredSlot);"))
+        XCTAssertTrue(script.contains("trainerSelectBuildSlot(requestedSlot);"))
         XCTAssertTrue(script.contains("trainerSelectedBuild = xsArrayGetInt(trainerEligibleBuilds, slot);"))
     }
 
@@ -177,6 +181,120 @@ final class XSBuildExporterTests: XCTestCase {
         XCTAssertTrue(script.contains("void trainerNextStep()"))
         XCTAssertTrue(script.contains("void trainerPreviousStep()"))
         XCTAssertTrue(script.contains("if (xsArrayGetBool(trainerStepEnabled, i) &&"))
+    }
+
+    func testStartingFoodRequirementsExportAsPositiveAndThresholds() throws {
+        let generic = build(id: "generic", strategyFamily: "fast-castle")
+        let hunt = build(id: "hunt", strategyFamily: "fast-castle",
+                         startingFoodRequirements: [.init(kind: .pushableHunt, minCount: 3)])
+        let mixed = build(id: "mixed", strategyFamily: "fast-castle",
+                          startingFoodRequirements: [.init(kind: .pushableHunt, minCount: 2),
+                                                     .init(kind: .smallGame, minCount: 4)])
+        let script = try XSBuildExporter.generate(builds: [generic, hunt, mixed], preferredBuildID: hunt.id)
+        XCTAssertTrue(script.contains("trainerBuildPushableMinimums = xsArrayCreateInt(3, 0,"))
+        XCTAssertTrue(script.contains("trainerBuildSmallGameMinimums = xsArrayCreateInt(3, 0,"))
+        XCTAssertTrue(script.contains("xsArraySetInt(trainerBuildPushableMinimums, 1, 3)"))
+        XCTAssertTrue(script.contains("xsArraySetInt(trainerBuildPushableMinimums, 2, 2)"))
+        XCTAssertTrue(script.contains("xsArraySetInt(trainerBuildSmallGameMinimums, 2, 4)"))
+        XCTAssertTrue(script.contains("xsArraySetString(trainerBuildFamilies, 1, \"fast-castle\")"))
+        XCTAssertTrue(script.contains("trainerObservedPushableHuntCount >= xsArrayGetInt(trainerBuildPushableMinimums, buildIndex) &&"))
+        XCTAssertTrue(script.contains("trainerObservedSmallGameCount >= xsArrayGetInt(trainerBuildSmallGameMinimums, buildIndex)"))
+        XCTAssertFalse(script.contains("// @FOOD_OBSERVER@"))
+    }
+
+    func testFoodDiscoveryDoesNotReplaceActiveBuildAndGoalsRemainCivilizationEligible() throws {
+        let script = try XSBuildExporter.generate(for: build())
+        XCTAssertTrue(script.contains("bool enabled = xsArrayGetBool(trainerBuildCivEnabled, stepBuild) &&"))
+        XCTAssertTrue(script.contains("if (selectedSlot >= 0) {\n        trainerSelectedBuildSlot = selectedSlot;\n        return;"))
+        XCTAssertTrue(script.contains("trainerRequestedBuild = trainerSelectedBuild;"))
+        XCTAssertTrue(script.contains("trainerPendingBuild = trainerRequestedBuild;"))
+        XCTAssertTrue(script.contains("WAITING FOR STARTING-FOOD EVIDENCE"))
+        XCTAssertTrue(script.contains("SAME-FAMILY FALLBACK"))
+        XCTAssertTrue(script.contains("requestedFamily != \"\" &&"))
+        XCTAssertTrue(script.contains("xsArrayGetString(trainerBuildFamilies, eligibleIndex) == requestedFamily"))
+    }
+
+    func testFoodObserverIsSelfContainedResettableAndRunsBeforeEligibilityRefresh() throws {
+        let script = try XSBuildExporter.generate(for: build())
+        XCTAssertTrue(script.contains("void trainerFoodInitialize()"))
+        XCTAssertTrue(script.contains("trainerFoodInitialize();"))
+        XCTAssertTrue(script.contains("trainerFoodReset();"))
+        XCTAssertTrue(script.contains("trainerObserveStartingFood(player, now);\n    trainerRefreshEligibleBuilds();"))
+        XCTAssertTrue(script.contains("bool rewound = trainerLastContextTime >= 0 && now < trainerLastContextTime;"))
+        XCTAssertTrue(script.contains("START FOOD SEEN:"))
+        XCTAssertTrue(script.contains("not remaining; 0=unknown"))
+        XCTAssertTrue(script.contains("INCOMPLETE lower bounds"))
+    }
+
+    func testFoodObserverChecksVisibilityBeforeReadingAnimalData() throws {
+        let script = try XSBuildExporter.generate(for: build())
+        let observer = try XCTUnwrap(
+            script.components(separatedBy: "void trainerFoodObserveSpecies(").last?
+                .components(separatedBy: "void trainerObserveStartingFood(").first
+        )
+        let visibility = try XCTUnwrap(observer.range(of: "if (xsUnsyncIsUnitVisible(animal, false, player))"))
+        for read in ["xsGetUnitObjectId(animal)", "xsGetUnitHitpoints(animal)",
+                     "xsGetUnitPosition(animal)"] {
+            let dataRead = try XCTUnwrap(observer.range(of: read))
+            XCTAssertLessThan(visibility.lowerBound, dataRead.lowerBound)
+        }
+        XCTAssertFalse(observer.contains("xsUnsyncIsUnitVisible(animal, true"))
+        XCTAssertFalse(observer.contains("xsVectorGetZ"))
+        XCTAssertTrue(observer.contains("xsVectorGetX(position)"))
+        XCTAssertTrue(observer.contains("xsVectorGetY(position)"))
+        XCTAssertTrue(observer.contains("xsGetUnitHitpoints(animal) > 0.0"))
+        XCTAssertTrue(observer.contains("dx * dx + dy * dy <= trainerFoodRadiusSquared"))
+    }
+
+    func testFoodObserverWhitelistsSpeciesAndNeverCountsHerdableChickensOrGoldFoxes() throws {
+        let script = try XSBuildExporter.generate(for: build())
+        let initialization = try XCTUnwrap(
+            script.components(separatedBy: "void trainerFoodInitialize()").last?
+                .components(separatedBy: "int trainerFoodCategory(").first
+        )
+        let species = [65, 1019, 1026, 1239, 1796, 1896,
+                       2084, 2086, 2088, 2098, 2099, 2100, 2739]
+        XCTAssertTrue(script.contains("const int trainerFoodSpeciesCount = \(species.count);"))
+        for (slot, objectID) in species.enumerated() {
+            XCTAssertTrue(initialization.contains("xsArraySetInt(trainerFoodSpeciesIDs, \(slot), \(objectID));"))
+        }
+        let classification = try XCTUnwrap(
+            script.components(separatedBy: "int trainerFoodCategory(").last?
+                .components(separatedBy: "bool trainerFoodWasObserved(").first
+        )
+        for objectID in [43, 2083, 2085, 2087, 1955, 1958, 2591, 2597, 2735] {
+            XCTAssertFalse(classification.contains("objectID == \(objectID)"))
+        }
+        XCTAssertTrue(script.contains("xsGetPlayerUnitIds(0, objectID, trainerFoodCandidateIDs)"))
+        XCTAssertFalse(script.contains("xsGetPlayerUnitIds(0, cPreyAnimalClass"))
+    }
+
+    func testFoodObserverDeduplicatesInstancesBeforeCheckingCapacity() throws {
+        let script = try XSBuildExporter.generate(for: build())
+        let remembering = try XCTUnwrap(
+            script.components(separatedBy: "void trainerFoodRemember(").last?
+                .components(separatedBy: "void trainerFoodFindAnchor(").first
+        )
+        let deduplication = try XCTUnwrap(remembering.range(of: "if (trainerFoodWasObserved(unitID))"))
+        let capacity = try XCTUnwrap(remembering.range(of: "if (trainerFoodSeenCount >= trainerFoodSeenCapacity)"))
+        XCTAssertLessThan(deduplication.lowerBound, capacity.lowerBound)
+        XCTAssertTrue(remembering.contains("unitID < 0"))
+        XCTAssertTrue(remembering.contains("xsArraySetInt(trainerFoodSeenUnitIDs, trainerFoodSeenCount, unitID) == false"))
+        XCTAssertFalse(remembering.contains("xsArrayCreate"))
+        XCTAssertTrue(script.contains("xsArrayGetInt(trainerFoodSeenUnitIDs, seenIndex) == unitID"))
+    }
+
+    func testFoodObservationsAreOpeningLowerBoundsWithExplicitUnknownStates() throws {
+        let script = try XSBuildExporter.generate(for: build())
+        XCTAssertTrue(script.contains("const int trainerFoodSeenCapacity = 512;"))
+        XCTAssertTrue(script.contains("const int trainerFoodCandidatesPerSpecies = 256;"))
+        XCTAssertTrue(script.contains("const int trainerFoodOpeningSeconds = 600;"))
+        XCTAssertTrue(script.contains("const float trainerFoodRadiusSquared = 576.0;"))
+        XCTAssertTrue(script.contains("(start + checks) % count"))
+        XCTAssertTrue(script.contains("if (trainerFoodHasAnchor) {\n        return;"))
+        XCTAssertTrue(script.contains("if (now > trainerFoodOpeningSeconds)"))
+        XCTAssertTrue(script.contains("NO FOOD VARIANT CONFIRMED: observations below requirements"))
+        XCTAssertTrue(script.contains("if (trainerCivCompatibleBuildCount == 0)"))
     }
 
     func testDeadlinesAreShownBeforeTheyExpireAndManualActionsAreNotCompleted() throws {
@@ -215,6 +333,24 @@ final class XSBuildExporterTests: XCTestCase {
         XCTAssertTrue(script.contains("unitClass = unitClass + 900;"))
         XCTAssertTrue(script.contains("xsGetUnitAttributeHeld(villager, cAttributeMeat)"))
         XCTAssertTrue(script.contains("APPROXIMATE"))
+    }
+
+    func testWorkerClassificationChecksVisibilityAndTreatsGoldFoxesAsGold() throws {
+        let script = try XSBuildExporter.generate(for: build())
+        let classifier = try XCTUnwrap(
+            script.components(separatedBy: "void trainerCountWorkers(").last?
+                .components(separatedBy: "int trainerHistoryIndex(").first
+        )
+        let visibility = try XCTUnwrap(classifier.range(of: "if (xsUnsyncIsUnitVisible(target, false, player))"))
+        for read in ["xsGetUnitObjectId(target)", "xsGetUnitClass(target)"] {
+            XCTAssertLessThan(visibility.lowerBound, try XCTUnwrap(classifier.range(of: read)).lowerBound)
+        }
+        let fox = try XCTUnwrap(classifier.range(of: "if (targetObject == 1955 || targetObject == 1958)"))
+        let prey = try XCTUnwrap(classifier.range(of: "unitClass == cPreyAnimalClass"))
+        XCTAssertLessThan(fox.lowerBound, prey.lowerBound)
+        XCTAssertTrue(classifier.contains("if (targetObject == 1955 || targetObject == 1958) {\n            gold = gold + 1;"))
+        XCTAssertTrue(classifier.contains("if (targetObject == 43) {\n                    unitClass = -1;"))
+        XCTAssertTrue(classifier.contains("xsGetUnitAttributeHeld(villager, cAttributeGold) > 0"))
     }
 
     func testTemplateUsesDocumentedXSGrammarRatherThanCStyle() throws {

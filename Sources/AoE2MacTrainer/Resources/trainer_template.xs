@@ -21,6 +21,7 @@ bool trainerCatalogReady = false;
 bool trainerUsesASCIIText = false;
 int trainerPlayer = -1;
 int trainerCivilization = -1;
+int trainerLastContextTime = -1;
 int trainerSampleCount = 0;
 int trainerWriteIndex = 0;
 int trainerSampleTimes = -1;
@@ -39,11 +40,19 @@ int trainerBuildCount = 0;
 int trainerPreferredBuild = -1;
 int trainerBuildNames = -1;
 int trainerBuildMaps = -1;
+int trainerBuildFamilies = -1;
+int trainerBuildPushableMinimums = -1;
+int trainerBuildSmallGameMinimums = -1;
+int trainerBuildCivEnabled = -1;
 int trainerBuildEnabled = -1;
+int trainerRequestedBuild = -1;
+int trainerPendingBuild = -1;
+bool trainerUsedFamilyFallback = false;
 int trainerAllowedPairCount = 0;
 int trainerAllowedBuilds = -1;
 int trainerAllowedCivilizations = -1;
 int trainerEligibleBuilds = -1;
+int trainerCivCompatibleBuildCount = 0;
 int trainerEligibleBuildCount = 0;
 int trainerSelectedBuildSlot = -1;
 int trainerSelectedBuild = -1;
@@ -80,6 +89,8 @@ int trainerStepTechCounts = -1;
 int trainerTechGoalIDs = -1;
 int trainerTechGoalLabels = -1;
 
+// @FOOD_OBSERVER@
+
 void trainerInitializeCatalog() {
     // @CATALOG_SETUP@
 }
@@ -106,6 +117,103 @@ void trainerSelectBuildSlot(int slot = 0) {
     // observed throughout the match, including plans not currently displayed.
 }
 
+// Food requirements are POSITIVE AND predicates. Zero observations do not
+// establish absence; generic builds have both required minima set to zero.
+bool trainerBuildPassesFood(int buildIndex = 0) {
+    return (trainerObservedPushableHuntCount >= xsArrayGetInt(trainerBuildPushableMinimums, buildIndex) &&
+            trainerObservedSmallGameCount >= xsArrayGetInt(trainerBuildSmallGameMinimums, buildIndex));
+}
+
+bool trainerBuildIsGeneric(int buildIndex = 0) {
+    return (xsArrayGetInt(trainerBuildPushableMinimums, buildIndex) == 0 &&
+            xsArrayGetInt(trainerBuildSmallGameMinimums, buildIndex) == 0);
+}
+
+void trainerRefreshEligibleBuilds() {
+    infiniteLoopLimit = 100000;
+    int selectedSlot = -1;
+    int requestedSlot = -1;
+    int genericSlot = -1;
+    int familySlot = -1;
+    int genericFamilySlot = -1;
+    string requestedFamily = "";
+    if (trainerRequestedBuild >= 0) {
+        requestedFamily = xsArrayGetString(trainerBuildFamilies, trainerRequestedBuild);
+    }
+    trainerCivCompatibleBuildCount = 0;
+    trainerEligibleBuildCount = 0;
+    for (eligibleIndex = 0; < trainerBuildCount) {
+        bool supportsCiv = xsArrayGetBool(trainerBuildCivEnabled, eligibleIndex);
+        if (supportsCiv) {
+            trainerCivCompatibleBuildCount = trainerCivCompatibleBuildCount + 1;
+        }
+        bool eligible = supportsCiv && trainerBuildPassesFood(eligibleIndex);
+        xsArraySetBool(trainerBuildEnabled, eligibleIndex, eligible);
+        if (eligible) {
+            xsArraySetInt(trainerEligibleBuilds, trainerEligibleBuildCount, eligibleIndex);
+            if (eligibleIndex == trainerSelectedBuild) {
+                selectedSlot = trainerEligibleBuildCount;
+            }
+            if (eligibleIndex == trainerRequestedBuild) {
+                requestedSlot = trainerEligibleBuildCount;
+            }
+            bool generic = trainerBuildIsGeneric(eligibleIndex);
+            if (generic && genericSlot < 0) {
+                genericSlot = trainerEligibleBuildCount;
+            }
+            if (requestedFamily != "" &&
+                xsArrayGetString(trainerBuildFamilies, eligibleIndex) == requestedFamily) {
+                if (familySlot < 0) {
+                    familySlot = trainerEligibleBuildCount;
+                }
+                if (generic && genericFamilySlot < 0) {
+                    genericFamilySlot = trainerEligibleBuildCount;
+                }
+            }
+            trainerEligibleBuildCount = trainerEligibleBuildCount + 1;
+        }
+    }
+
+    // New discoveries update alternatives, never replace an active choice or
+    // reset its displayed/manual step. Only its position in the list changes.
+    if (selectedSlot >= 0) {
+        trainerSelectedBuildSlot = selectedSlot;
+        return;
+    }
+    trainerSelectBuildSlot(-1);
+    trainerPendingBuild = -1;
+    trainerUsedFamilyFallback = false;
+
+    if (trainerRequestedBuild >= 0) {
+        if (requestedSlot >= 0) {
+            trainerSelectBuildSlot(requestedSlot);
+            return;
+        }
+        trainerPendingBuild = trainerRequestedBuild;
+        if (xsArrayGetBool(trainerBuildCivEnabled, trainerRequestedBuild)) {
+            // This explicitly requested food variant is waiting for evidence.
+            // A generic/other-family build must not silently replace it.
+            return;
+        }
+        // An unsupported civilization may only use a SAME FAMILY alternative.
+        // No family tag or no matching alternative requires an explicit choice.
+        if (genericFamilySlot >= 0) {
+            familySlot = genericFamilySlot;
+        }
+        if (familySlot >= 0) {
+            trainerSelectBuildSlot(familySlot);
+            trainerPendingBuild = -1;
+            trainerUsedFamilyFallback = true;
+        }
+        return;
+    }
+    if (genericSlot >= 0) {
+        trainerSelectBuildSlot(genericSlot);
+    } else if (trainerEligibleBuildCount > 0) {
+        trainerSelectBuildSlot(0);
+    }
+}
+
 bool trainerRefreshContext() {
     infiniteLoopLimit = 100000;
     if (trainerCatalogReady == false) {
@@ -115,73 +223,73 @@ bool trainerRefreshContext() {
     if (player < 1) {
         trainerPlayer = -1;
         trainerCivilization = -1;
+        trainerLastContextTime = -1;
+        trainerCivCompatibleBuildCount = 0;
         trainerEligibleBuildCount = 0;
+        trainerPendingBuild = -1;
         trainerSelectBuildSlot(-1);
+        trainerFoodReset();
         return (false);
     }
     int civilization = xsGetPlayerCivilization(player);
-    if (player == trainerPlayer && civilization == trainerCivilization) {
-        return (true);
-    }
-
-    trainerPlayer = player;
-    trainerCivilization = civilization;
-    trainerSampleCount = 0;
-    trainerWriteIndex = 0;
-    trainerRecentReset = false;
-    trainerWindowStatus = 0;
-    trainerEligibleBuildCount = 0;
-    for (buildIndex = 0; < trainerBuildCount) {
-        xsArraySetBool(trainerBuildEnabled, buildIndex, false);
-    }
-    // A strict allowlist: an unknown or unsupported civ enables no build.
-    for (allowedIndex = 0; < trainerAllowedPairCount) {
-        if (xsArrayGetInt(trainerAllowedCivilizations, allowedIndex) == civilization) {
-            xsArraySetBool(trainerBuildEnabled,
-                xsArrayGetInt(trainerAllowedBuilds, allowedIndex), true);
+    int now = xsGetGameTime();
+    bool identityChanged = player != trainerPlayer || civilization != trainerCivilization;
+    bool rewound = trainerLastContextTime >= 0 && now < trainerLastContextTime;
+    if (identityChanged || rewound) {
+        if (identityChanged) {
+            trainerRequestedBuild = trainerPreferredBuild;
         }
-    }
-
-    for (stepIndex = 0; < trainerStepCount) {
-        int stepBuild = xsArrayGetInt(trainerStepBuilds, stepIndex);
-        bool enabled = xsArrayGetBool(trainerBuildEnabled, stepBuild) &&
-                       xsArrayGetBool(trainerStepUsesIncludeOnly, stepIndex) == false;
-        xsArraySetBool(trainerStepEnabled, stepIndex, enabled);
-        xsArraySetInt(trainerStepDoneTimes, stepIndex, -1);
-    }
-    for (includedIndex = 0; < trainerIncludedPairCount) {
-        if (xsArrayGetInt(trainerIncludedCivilizations, includedIndex) == civilization) {
-            int includedStep = xsArrayGetInt(trainerIncludedSteps, includedIndex);
-            int ownerBuild = xsArrayGetInt(trainerStepBuilds, includedStep);
-            xsArraySetBool(trainerStepEnabled, includedStep,
-                xsArrayGetBool(trainerBuildEnabled, ownerBuild));
-        }
-    }
-    // Exclusion is applied last, so it always wins over an include.
-    for (excludedIndex = 0; < trainerExcludedPairCount) {
-        if (xsArrayGetInt(trainerExcludedCivilizations, excludedIndex) == civilization) {
-            xsArraySetBool(trainerStepEnabled,
-                xsArrayGetInt(trainerExcludedSteps, excludedIndex), false);
-        }
-    }
-
-    int preferredSlot = -1;
-    for (eligibleIndex = 0; < trainerBuildCount) {
-        if (xsArrayGetBool(trainerBuildEnabled, eligibleIndex)) {
-            xsArraySetInt(trainerEligibleBuilds, trainerEligibleBuildCount, eligibleIndex);
-            if (eligibleIndex == trainerPreferredBuild) {
-                preferredSlot = trainerEligibleBuildCount;
-            }
-            trainerEligibleBuildCount = trainerEligibleBuildCount + 1;
-        }
-    }
-    if (preferredSlot >= 0) {
-        trainerSelectBuildSlot(preferredSlot);
-    } else if (trainerEligibleBuildCount > 0) {
-        trainerSelectBuildSlot(0);
-    } else {
+        trainerPlayer = player;
+        trainerCivilization = civilization;
+        trainerSampleCount = 0;
+        trainerWriteIndex = 0;
+        trainerRecentReset = rewound;
+        trainerWindowStatus = 0;
+        trainerEligibleBuildCount = 0;
+        trainerPendingBuild = -1;
+        trainerUsedFamilyFallback = false;
         trainerSelectBuildSlot(-1);
+        trainerFoodReset();
+        for (buildIndex = 0; < trainerBuildCount) {
+            xsArraySetBool(trainerBuildCivEnabled, buildIndex, false);
+            xsArraySetBool(trainerBuildEnabled, buildIndex, false);
+        }
+        // A strict civilization allowlist, independent of observed food.
+        for (allowedIndex = 0; < trainerAllowedPairCount) {
+            if (xsArrayGetInt(trainerAllowedCivilizations, allowedIndex) == civilization) {
+                xsArraySetBool(trainerBuildCivEnabled,
+                    xsArrayGetInt(trainerAllowedBuilds, allowedIndex), true);
+            }
+        }
+
+        // Observe goal history for ALL civilization-compatible plans, even if
+        // their food conditions have not yet qualified them for selection.
+        for (stepIndex = 0; < trainerStepCount) {
+            int stepBuild = xsArrayGetInt(trainerStepBuilds, stepIndex);
+            bool enabled = xsArrayGetBool(trainerBuildCivEnabled, stepBuild) &&
+                           xsArrayGetBool(trainerStepUsesIncludeOnly, stepIndex) == false;
+            xsArraySetBool(trainerStepEnabled, stepIndex, enabled);
+            xsArraySetInt(trainerStepDoneTimes, stepIndex, -1);
+        }
+        for (includedIndex = 0; < trainerIncludedPairCount) {
+            if (xsArrayGetInt(trainerIncludedCivilizations, includedIndex) == civilization) {
+                int includedStep = xsArrayGetInt(trainerIncludedSteps, includedIndex);
+                int ownerBuild = xsArrayGetInt(trainerStepBuilds, includedStep);
+                xsArraySetBool(trainerStepEnabled, includedStep,
+                    xsArrayGetBool(trainerBuildCivEnabled, ownerBuild));
+            }
+        }
+        // Exclusion is applied last, so it always wins over an include.
+        for (excludedIndex = 0; < trainerExcludedPairCount) {
+            if (xsArrayGetInt(trainerExcludedCivilizations, excludedIndex) == civilization) {
+                xsArraySetBool(trainerStepEnabled,
+                    xsArrayGetInt(trainerExcludedSteps, excludedIndex), false);
+            }
+        }
     }
+    trainerLastContextTime = now;
+    trainerObserveStartingFood(player, now);
+    trainerRefreshEligibleBuilds();
     return (true);
 }
 
@@ -191,15 +299,28 @@ void trainerNextBuild() {
     if (trainerRefreshContext() == false || trainerEligibleBuildCount == 0) {
         return;
     }
-    trainerSelectBuildSlot((trainerSelectedBuildSlot + 1) % trainerEligibleBuildCount);
+    int nextSlot = trainerSelectedBuildSlot + 1;
+    if (nextSlot >= trainerEligibleBuildCount) {
+        nextSlot = 0;
+    }
+    trainerSelectBuildSlot(nextSlot);
+    trainerRequestedBuild = trainerSelectedBuild;
+    trainerPendingBuild = -1;
+    trainerUsedFamilyFallback = false;
 }
 
 void trainerPreviousBuild() {
     if (trainerRefreshContext() == false || trainerEligibleBuildCount == 0) {
         return;
     }
-    trainerSelectBuildSlot((trainerSelectedBuildSlot + trainerEligibleBuildCount - 1) %
-                           trainerEligibleBuildCount);
+    int previousSlot = trainerSelectedBuildSlot - 1;
+    if (previousSlot < 0) {
+        previousSlot = trainerEligibleBuildCount - 1;
+    }
+    trainerSelectBuildSlot(previousSlot);
+    trainerRequestedBuild = trainerSelectedBuild;
+    trainerPendingBuild = -1;
+    trainerUsedFamilyFallback = false;
 }
 
 void main() {
@@ -217,6 +338,7 @@ void main() {
     trainerWorkersStone = xsArrayCreateInt(trainerHistorySize, 0, "trainer_workers_stone");
     trainerVillagerIDs = xsArrayCreateInt(1, -1, "trainer_villager_ids");
     trainerInitializeCatalog();
+    trainerFoodInitialize();
     trainerCatalogReady = true;
 }
 
@@ -235,16 +357,33 @@ void trainerCountWorkers(int player = 0) {
         int villager = xsArrayGetInt(ids, i);
         int target = xsGetUnitTargetUnitId(villager);
         int unitClass = -1;
+        int targetObject = -1;
         if (target >= 0 && xsDoesUnitExist(target)) {
-            unitClass = xsGetUnitClass(target);
-            // Object-class selectors use 900 + the raw data class. Accept
-            // either representation; both occur across XS API descriptions.
-            if (unitClass >= 0 && unitClass <= 64) {
-                unitClass = unitClass + 900;
+            // A retained task target may now be in fog. Do not query live
+            // target data there; the own villager's carried resource can still
+            // provide the approximate fallback below.
+            if (xsUnsyncIsUnitVisible(target, false, player)) {
+                targetObject = xsGetUnitObjectId(target);
+                unitClass = xsGetUnitClass(target);
+                // Object-class selectors use 900 + the raw data class. Accept
+                // either representation; both occur across XS API descriptions.
+                if (unitClass >= 0 && unitClass <= 64) {
+                    unitClass = unitClass + 900;
+                }
+                // Corpse 43 is shared by food hunt AND gold foxes. Its class
+                // cannot prove a food assignment; wait for carried-resource
+                // evidence instead of labelling an empty-handed worker food.
+                if (targetObject == 43) {
+                    unitClass = -1;
+                }
             }
         }
 
-        if (unitClass == cTreeClass) {
+        // Red and arctic foxes are prey-class animals that supply GOLD.
+        // This verified exception must precede the broader food-class branch.
+        if (targetObject == 1955 || targetObject == 1958) {
+            gold = gold + 1;
+        } else if (unitClass == cTreeClass) {
             wood = wood + 1;
         } else if (unitClass == cGoldMine) {
             gold = gold + 1;
@@ -608,6 +747,43 @@ int trainerMissedCheckpoints(int now = 0) {
     return (missed);
 }
 
+string trainerStartingFoodCaption() {
+    string evidence = "START FOOD SEEN: hunt " + trainerObservedPushableHuntCount +
+                      " | small " + trainerObservedSmallGameCount + " (not remaining; 0=unknown)";
+    if (trainerFoodLastTime > trainerFoodOpeningSeconds) {
+        if (trainerFoodObservationIncomplete) {
+            return (evidence + " | OPENING ENDED; INCOMPLETE lower bounds");
+        }
+        return (evidence + " | OPENING OBSERVATION ENDED");
+    }
+    if (trainerFoodObservationIncomplete) {
+        return (evidence + " | INCOMPLETE lower bounds");
+    }
+    if (trainerFoodObservationStatus == 0) {
+        return (evidence + " | WAITING FOR OWN TC");
+    }
+    if (trainerFoodObservationStatus == 2) {
+        return (evidence + " | OPENING OBSERVATION ENDED");
+    }
+    if (trainerFoodObservationStatus == 4) {
+        return (evidence + " | OBSERVER UNAVAILABLE");
+    }
+    return (evidence);
+}
+
+string trainerFoodRequirementProgress(int buildIndex = 0) {
+    string progress = "REQUIRES SEEN:";
+    int huntMinimum = xsArrayGetInt(trainerBuildPushableMinimums, buildIndex);
+    int smallMinimum = xsArrayGetInt(trainerBuildSmallGameMinimums, buildIndex);
+    if (huntMinimum > 0) {
+        progress = progress + " hunt " + trainerObservedPushableHuntCount + "/" + huntMinimum;
+    }
+    if (smallMinimum > 0) {
+        progress = progress + " small " + trainerObservedSmallGameCount + "/" + smallMinimum;
+    }
+    return (progress);
+}
+
 rule trainerMetrics
     active
     minInterval 2
@@ -690,12 +866,32 @@ rule trainerMetrics
     if (trainerUsesASCIIText) {
         text = text + "\nTEXT: ASCII transliteration (original in app/JSON)";
     }
-    if (trainerSelectedBuild < 0) {
-        text = text + "\nNO MATCHING BUILDS for this civilization";
+    if (trainerPendingBuild >= 0) {
+        text = text + "\nREQUESTED: " + xsArrayGetString(trainerBuildNames, trainerPendingBuild);
+        if (xsArrayGetBool(trainerBuildCivEnabled, trainerPendingBuild)) {
+            if (now > trainerFoodOpeningSeconds) {
+                text = text + "\nSTARTING-FOOD EVIDENCE UNCONFIRMED: observation window ended";
+            } else {
+                text = text + "\nWAITING FOR STARTING-FOOD EVIDENCE";
+            }
+            text = text + "\n" + trainerFoodRequirementProgress(trainerPendingBuild);
+        } else {
+            text = text + "\nUNAVAILABLE FOR THIS CIV: no eligible same-family alternative";
+        }
+        text = text + "\nEligible alternatives: " + trainerEligibleBuildCount + " (explicit selection only)";
+    } else if (trainerSelectedBuild < 0) {
+        if (trainerCivCompatibleBuildCount == 0) {
+            text = text + "\nNO MATCHING BUILDS for this civilization";
+        } else {
+            text = text + "\nNO FOOD VARIANT CONFIRMED: observations below requirements";
+        }
     } else {
         text = text + "\nBUILD " + (trainerSelectedBuildSlot + 1) + "/" + trainerEligibleBuildCount +
                ": " + xsArrayGetString(trainerBuildNames, trainerSelectedBuild) +
                " | " + xsArrayGetString(trainerBuildMaps, trainerSelectedBuild);
+        if (trainerUsedFamilyFallback) {
+            text = text + "\nSAME-FAMILY FALLBACK: requested build does not support this CIV";
+        }
         int slot = trainerActiveStepSlot(now);
         if (slot >= 0) {
             int step = xsArrayGetInt(trainerSelectedSteps, slot);
@@ -710,6 +906,7 @@ rule trainerMetrics
             text = text + "\nNO APPLICABLE STEPS";
         }
     }
+    text = text + "\n" + trainerStartingFoodCaption();
     text = text + "\n" + trainerWindowCaption();
     text = text + "\n" + trainerRateLine("FOOD", rateFood, trainerAverageWorkers(trainerWorkersFood, now));
     text = text + "\n" + trainerRateLine("WOOD", rateWood, trainerAverageWorkers(trainerWorkersWood, now));
