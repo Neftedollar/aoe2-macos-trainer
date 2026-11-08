@@ -24,8 +24,11 @@ jobs:
           echo '93deca6c96503124ec349e70b4b3042d99a9ad562aaa97125f0cdb9db7789f3f  xs-check' | sha256sum --check
           chmod +x xs-check
 
+      - name: Assemble runtime and food observer
+        run: node Scripts/assemble-xs-template.mjs
+
       - name: Validate runtime template before the macOS build finishes
-        run: ./xs-check Sources/AoE2MacTrainer/Resources/trainer_template.xs
+        run: ./xs-check .build/ci/trainer-runtime.xs
 
   build:
     runs-on: macos-15

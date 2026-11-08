@@ -28,6 +28,9 @@ struct OverlayView: View {
                         .font(.system(size: 11))
                         .foregroundStyle(.white.opacity(0.65))
                 }
+                Text("Еда вручную: толкаемая \(foodCount(state.previewFoodEvidence.pushableHuntCount)) · мелкая \(foodCount(state.previewFoodEvidence.smallGameCount))")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.white.opacity(0.6))
             }
 
             if let message = state.loadErrorMessage {
@@ -37,6 +40,13 @@ struct OverlayView: View {
                     .font(.system(size: 10))
                     .foregroundStyle(.red)
                     .lineLimit(3)
+            }
+
+            if let notice = state.selectionNotice {
+                Text(notice)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             if let build = state.selectedBuild {
@@ -50,6 +60,17 @@ struct OverlayView: View {
                     Text("\(build.map) · \(build.strategy)")
                         .font(.system(size: 11))
                         .foregroundStyle(.white.opacity(0.65))
+                    if let family = build.strategyFamily {
+                        Text("Семейство: \(family)")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.white.opacity(0.6))
+                    }
+                    if let requirements = build.startingFoodRequirements, !requirements.isEmpty {
+                        Text("Условия варианта: " + foodRequirements(requirements))
+                            .font(.system(size: 10))
+                            .foregroundStyle(.white.opacity(0.6))
+                            .lineLimit(2)
+                    }
                     if let status = build.planStatus, !status.isEmpty {
                         Text("Статус плана: \(status)")
                             .font(.system(size: 10))
@@ -132,9 +153,7 @@ struct OverlayView: View {
                     }
                 }
             } else {
-                Text(state.previewCivilizationID == nil
-                     ? "Выбери цивилизацию в меню 🏰 → PREVIEW. Без неё билды скрыты."
-                     : "Для этой цивилизации нет подходящих билдов. Чужие билды не участвуют в переключении.")
+                Text(unavailablePlanMessage)
                     .font(.system(size: 13))
                     .foregroundStyle(.white)
                     .fixedSize(horizontal: false, vertical: true)
@@ -160,5 +179,31 @@ struct OverlayView: View {
                 )
         )
         .preferredColorScheme(.dark)
+    }
+
+    private func foodCount(_ count: Int) -> String {
+        count == 0 ? "?" : String(count)
+    }
+
+    private func foodRequirements(_ requirements: [StartingFoodRequirement]) -> String {
+        requirements.map { requirement in
+            let label = requirement.kind == .pushableHunt ? "толкаемая дичь" : "мелкая дичь"
+            return "\(label) ≥ \(requirement.minCount)"
+        }.joined(separator: " · ")
+    }
+
+    private var unavailablePlanMessage: String {
+        guard state.previewCivilizationID != nil else {
+            return "Выбери цивилизацию в меню 🏰 → PREVIEW. Без неё билды скрыты."
+        }
+        if let requested = state.requestedBuildID {
+            let title = state.unavailableRequestedBuild?.name ?? requested
+            let family = state.requestedStrategyFamily.map { " Семейство: \($0)." } ?? ""
+            return "«\(title)» пока недоступен при текущих допущениях.\(family) Другой план не выбран автоматически. Измени еду или выбери подходящий билд через меню / ⌃⌥B."
+        }
+        if state.builds.isEmpty {
+            return "Нет билдов под эту цивилизацию и допущения еды. «?» означает, что дичь не наблюдалась; это не подтверждённое отсутствие."
+        }
+        return "Появились подходящие варианты. Выбери билд в меню 🏰 или нажми ⌃⌥B. Автоматическая смена стратегии не выполняется."
     }
 }

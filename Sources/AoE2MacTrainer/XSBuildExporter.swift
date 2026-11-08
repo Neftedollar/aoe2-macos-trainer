@@ -43,7 +43,10 @@ enum XSBuildExporter {
         }
         guard let url = Bundle.module.url(forResource: "trainer_template", withExtension: "xs"),
               let template = try? String(contentsOf: url, encoding: .utf8),
-              template.contains("// @CATALOG_SETUP@") else {
+              template.components(separatedBy: "// @CATALOG_SETUP@").count == 2,
+              template.components(separatedBy: "// @FOOD_OBSERVER@").count == 2,
+              let foodURL = Bundle.module.url(forResource: "food_observation_template", withExtension: "xs"),
+              let foodObserver = try? String(contentsOf: foodURL, encoding: .utf8) else {
             throw ExportError.missingTemplate
         }
 
@@ -107,6 +110,10 @@ enum XSBuildExporter {
 
         stringArray("trainerBuildNames", builds.count)
         stringArray("trainerBuildMaps", builds.count)
+        stringArray("trainerBuildFamilies", builds.count)
+        intArray("trainerBuildPushableMinimums", builds.count, 0)
+        intArray("trainerBuildSmallGameMinimums", builds.count, 0)
+        boolArray("trainerBuildCivEnabled", builds.count)
         boolArray("trainerBuildEnabled", builds.count)
         intArray("trainerEligibleBuilds", builds.count)
         intArray("trainerSelectedSteps", maxBuildSteps)
@@ -135,6 +142,15 @@ enum XSBuildExporter {
         for (index, build) in builds.enumerated() {
             setString("trainerBuildNames", index, build.name)
             setString("trainerBuildMaps", index, build.map)
+            setString("trainerBuildFamilies", index, build.strategyFamily ?? "")
+            for requirement in build.startingFoodRequirements ?? [] {
+                switch requirement.kind {
+                case .pushableHunt:
+                    setInt("trainerBuildPushableMinimums", index, requirement.minCount)
+                case .smallGame:
+                    setInt("trainerBuildSmallGameMinimums", index, requirement.minCount)
+                }
+            }
         }
         for (index, pair) in allowed.enumerated() {
             setInt("trainerAllowedBuilds", index, pair.build)
@@ -183,7 +199,8 @@ enum XSBuildExporter {
         }
 
         lines.append("    trainerUsesASCIIText = \(hasTransliteratedText ? "true" : "false");")
-        return template.replacingOccurrences(of: "// @CATALOG_SETUP@", with: lines.joined(separator: "\n"))
+        return template.replacingOccurrences(of: "// @FOOD_OBSERVER@", with: foodObserver)
+            .replacingOccurrences(of: "// @CATALOG_SETUP@", with: lines.joined(separator: "\n"))
     }
 
     static func recommendedFileName(for build: BuildOrder) -> String {
