@@ -36,7 +36,7 @@ struct OverlayView: View {
                         if let delay = state.stepDelaySeconds, state.gameSeconds > 0 {
                             Text(delay >= 0 ? "+\(delay) c" : "\(delay) c")
                                 .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                                .foregroundStyle(delay > 10 ? .red : .green)
+                                .foregroundColor(delay > 10 ? Color.red : Color.green)
                         }
                     }
 

@@ -35,7 +35,9 @@ final class HotkeyManager {
                 nil,
                 &eventID
             )
-            guard status == noErr, let action = TrainerHotkey(rawValue: eventID.id) else {
+            guard status == noErr,
+                  eventID.signature == 0x41324D54,
+                  let action = TrainerHotkey(rawValue: eventID.id) else {
                 return OSStatus(eventNotHandledErr)
             }
             let manager = Unmanaged<HotkeyManager>.fromOpaque(context).takeUnretainedValue()
