@@ -32,6 +32,15 @@ final class BuildOrderSchemaTests: XCTestCase {
         return try JSONSerialization.data(withJSONObject: dictionary)
     }
 
+    private func assertUnknownKey(_ data: Data, key: String, path: String,
+                                  file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertThrowsError(try BuildOrderLibrary.decode(data), file: file, line: line) { error in
+            XCTAssertTrue(error.localizedDescription.contains("неизвестное поле"), file: file, line: line)
+            XCTAssertTrue(error.localizedDescription.contains(key), file: file, line: line)
+            XCTAssertTrue(error.localizedDescription.contains(path), file: file, line: line)
+        }
+    }
+
     private func makeTempDirectory() throws -> URL {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent(
             "AoE2BuildSchema-Tests-\(UUID().uuidString)", isDirectory: true
@@ -140,6 +149,85 @@ final class BuildOrderSchemaTests: XCTestCase {
             }
             XCTAssertThrowsError(try BuildOrderLibrary.decode(data))
         }
+    }
+
+    func testV2RejectsMisspelledSelectorsInsteadOfSilentlyEnablingAllCivilizations() throws {
+        for key in ["includes", "include_only", "exlclude"] {
+            let data = try mutatedDocument { dictionary in
+                var builds = try XCTUnwrap(dictionary["builds"] as? [[String: Any]])
+                var steps = try XCTUnwrap(builds[0]["steps"] as? [[String: Any]])
+                steps[0][key] = ["turks"]
+                builds[0]["steps"] = steps
+                dictionary["builds"] = builds
+            }
+            assertUnknownKey(data, key: key, path: "$.builds[0].steps[0]")
+            XCTAssertThrowsError(try BuildOrderLibrary.decode(data)) { error in
+                XCTAssertTrue(error.localizedDescription.contains("fast-imperial"))
+                XCTAssertTrue(error.localizedDescription.contains("includeOnly"))
+                XCTAssertTrue(error.localizedDescription.contains("exclude"))
+            }
+        }
+    }
+
+    func testV2RejectsUnknownRootBuildDeclarationAndSourceKeys() throws {
+        let root = try mutatedDocument { $0["defaultCivilization"] = "turks" }
+        assertUnknownKey(root, key: "defaultCivilization", path: "$")
+
+        let declaration = try mutatedDocument { dictionary in
+            var civilizations = try XCTUnwrap(dictionary["civilizations"] as? [[String: Any]])
+            civilizations[0]["xsId"] = 10
+            dictionary["civilizations"] = civilizations
+        }
+        assertUnknownKey(declaration, key: "xsId", path: "$.civilizations[0]")
+
+        let build = try mutatedDocument { dictionary in
+            var builds = try XCTUnwrap(dictionary["builds"] as? [[String: Any]])
+            builds[0]["exclude"] = ["turks"]
+            dictionary["builds"] = builds
+        }
+        assertUnknownKey(build, key: "exclude", path: "$.builds[0]")
+
+        let source = try mutatedDocument { dictionary in
+            var builds = try XCTUnwrap(dictionary["builds"] as? [[String: Any]])
+            var sources = try XCTUnwrap(builds[0]["sources"] as? [[String: Any]])
+            sources[0]["link"] = "https://example.com/build"
+            builds[0]["sources"] = sources
+            dictionary["builds"] = builds
+        }
+        assertUnknownKey(source, key: "link", path: "$.builds[0].sources[0]")
+    }
+
+    func testV2RejectsUnknownNestedAllocationAndGoalKeys() throws {
+        let cases: [(field: String, badKey: String, value: Any, pathSuffix: String)] = [
+            ("allocation", "foodWorkers",
+             ["food": 6, "wood": 0, "gold": 0, "stone": 0, "foodWorkers": 6] as [String: Any], "allocation"),
+            ("unitGoals", "objectID",
+             [["objectId": 74, "count": 1, "label": "Militia", "objectID": 74]] as [[String: Any]], "unitGoals[0]"),
+            ("technologyGoals", "technologyID",
+             [["technologyId": 101, "label": "Feudal", "technologyID": 101]] as [[String: Any]], "technologyGoals[0]")
+        ]
+        for testCase in cases {
+            let data = try mutatedDocument { dictionary in
+                var builds = try XCTUnwrap(dictionary["builds"] as? [[String: Any]])
+                var steps = try XCTUnwrap(builds[0]["steps"] as? [[String: Any]])
+                steps[0][testCase.field] = testCase.value
+                builds[0]["steps"] = steps
+                dictionary["builds"] = builds
+            }
+            assertUnknownKey(data, key: testCase.badKey,
+                             path: "$.builds[0].steps[0].\(testCase.pathSuffix)")
+        }
+    }
+
+    func testLegacyArrayImportRemainsPermissiveAboutUnknownKeys() throws {
+        let initial = try JSONSerialization.jsonObject(with: JSONEncoder().encode([makeBuild()]))
+        var builds = try XCTUnwrap(initial as? [[String: Any]])
+        builds[0]["oldEditorMetadata"] = "preserved by external tool"
+        var steps = try XCTUnwrap(builds[0]["steps"] as? [[String: Any]])
+        steps[0]["oldNote"] = "legacy optional field"
+        builds[0]["steps"] = steps
+        let data = try JSONSerialization.data(withJSONObject: builds)
+        XCTAssertEqual(try BuildOrderLibrary.decode(data), [makeBuild()])
     }
 
     func testStepCannotReferenceCivilizationOutsideBuildAllowlist() throws {

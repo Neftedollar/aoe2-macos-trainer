@@ -339,7 +339,8 @@ enum BuildOrderLibrary {
                 schemaVersion: 2, civilizations: CivilizationCatalog.standard,
                 builds: try legacy.map(normalizeLegacy)
             )
-        } else if root is [String: Any] {
+        } else if let object = root as? [String: Any] {
+            try validateV2Keys(object)
             decoder.userInfo[.strictBuildLibraryV2] = true
             document = try decoder.decode(BuildOrderDocument.self, from: data)
             guard document.schemaVersion == 2 else {
@@ -354,6 +355,55 @@ enum BuildOrderLibrary {
                      declaredCivilizations: Set(document.civilizations.map(\.id)),
                      allowEmpty: allowEmpty)
         return document
+    }
+
+    /// Codable intentionally ignores unknown keys. For editable v2 plans that
+    /// would make a typo such as `exlclude` silently remove a civilization
+    /// restriction, so reject unknown fields before decoding any typed models.
+    /// Legacy arrays remain permissive for compatibility with older exports.
+    private static func validateV2Keys(_ root: [String: Any]) throws {
+        func check(_ object: [String: Any], allowed: Set<String>, path: String,
+                   context: String = "") throws {
+            if let unknown = Set(object.keys).subtracting(allowed).sorted().first {
+                throw LibraryError.invalidDocument(
+                    "\(path)\(context): неизвестное поле «\(unknown)». Допустимые поля: \(allowed.sorted().joined(separator: ", "))."
+                )
+            }
+        }
+
+        try check(root, allowed: ["schemaVersion", "civilizations", "builds"], path: "$")
+        for (index, declaration) in ((root["civilizations"] as? [[String: Any]]) ?? []).enumerated() {
+            try check(declaration, allowed: ["id", "name", "xsID"], path: "$.civilizations[\(index)]")
+        }
+        for (buildIndex, build) in ((root["builds"] as? [[String: Any]]) ?? []).enumerated() {
+            let buildPath = "$.builds[\(buildIndex)]"
+            let context = (build["id"] as? String).map { " (билд «\($0)»)" } ?? ""
+            try check(build, allowed: ["id", "name", "civilizations", "map", "mapScriptFile",
+                                       "strategy", "description", "steps", "sources", "planStatus"],
+                      path: buildPath, context: context)
+            for (sourceIndex, source) in ((build["sources"] as? [[String: Any]]) ?? []).enumerated() {
+                try check(source, allowed: ["title", "url"], path: "\(buildPath).sources[\(sourceIndex)]",
+                          context: context)
+            }
+            for (stepIndex, step) in ((build["steps"] as? [[String: Any]]) ?? []).enumerated() {
+                let stepPath = "\(buildPath).steps[\(stepIndex)]"
+                try check(step, allowed: ["action", "targetVillagers", "targetTimeSeconds", "allocation",
+                                          "note", "unitGoals", "includeOnly", "exclude", "technologyGoals"],
+                          path: stepPath, context: context)
+                if let allocation = step["allocation"] as? [String: Any] {
+                    try check(allocation, allowed: ["food", "wood", "gold", "stone"],
+                              path: "\(stepPath).allocation", context: context)
+                }
+                for (goalIndex, goal) in ((step["unitGoals"] as? [[String: Any]]) ?? []).enumerated() {
+                    try check(goal, allowed: ["objectId", "count", "label"],
+                              path: "\(stepPath).unitGoals[\(goalIndex)]", context: context)
+                }
+                for (goalIndex, goal) in ((step["technologyGoals"] as? [[String: Any]]) ?? []).enumerated() {
+                    try check(goal, allowed: ["technologyId", "label"],
+                              path: "\(stepPath).technologyGoals[\(goalIndex)]", context: context)
+                }
+            }
+        }
     }
 
     private static func validateDeclarations(_ declarations: [CivilizationDefinition]) throws {

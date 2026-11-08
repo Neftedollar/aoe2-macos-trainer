@@ -125,6 +125,7 @@ Rules:
 - Root `civilizations` declares canonical IDs and their known XS IDs. Unknown IDs, incorrect XS mappings, and duplicate declarations are errors.
 - Each build has a nonempty explicit `civilizations` allowlist. It is an eligibility rule, not a label.
 - Optional step `includeOnly` and `exclude` **must be arrays**. Every referenced civilization must be declared and must belong to the parent build. `exclude` wins if both selectors match. An empty `includeOnly` is rejected.
+- V2 rejects unknown fields at every object level, so a typo such as `exlclude` cannot silently drop a restriction. Error messages identify the JSON path.
 - Validation checks the timeline after resolving each civilization's steps, so mutually exclusive variants may have different times. Every allowed civilization must retain at least one step.
 - Unknown/no-current-civilization fails closed. Neither preview nor XS treats that as “show everything.”
 - `name` supplies the visible build title. `sources: [{"title": "...", "url": "https://..."}]` and `planStatus` preserve provenance.
@@ -142,13 +143,17 @@ Older root-array documents, the singular `civilization` field, and recognized Ru
 | `unitGoals` | Current owned object counts by `objectId`; foundations and upgraded IDs require caution |
 | `technologyGoals` | Technology is **completed** (`xsGetTechState(id, player) == 3`), not merely queued or researching |
 
-All measurable conditions in a step must hold together. The script samples every two game seconds and remembers the first observation satisfying a step. It tracks all civilization-eligible plans, including those not currently displayed, so switching does not invent a new achievement time. Loading the script late cannot reconstruct prior events. Steps without a measurable condition remain **MANUAL ACTION**, not automatically completed instructions.
+All measurable conditions in a step must hold together. A MET status confirms those declared conditions, not every imperative in the free-text instruction. The script samples every two game seconds and remembers the first observation satisfying a step. It tracks all civilization-eligible plans, including those not currently displayed, so switching does not invent a new achievement time. Loading the script late cannot reconstruct prior events. Steps without a measurable condition remain **MANUAL ACTION**, not automatically completed instructions.
 
 Upcoming incomplete checkpoints are shown before their deadlines. Late/missed checkpoints remain in a summary; manual next/previous selects an instruction but never marks its goal complete. Goal timing has the sampling resolution of the XS rule, not frame-perfect precision.
+
+An untimed manual step requires explicit next-step navigation. Give instructions deadlines for automatic timeline progression; all bundled plans do this. A plain generated RMS currently has no bound next-step input.
 
 ## Economy metrics
 
 The XS panel shows each resource's gross collection per minute over a rolling 60 **game-second** window, average estimated workers over that window, and approximate collection per worker. It reads cumulative collected counters (`166…169`), **not the resource stockpile**, so spending does not masquerade as lower collection. There is a warm-up before a full window is available.
+
+The boundary between samples is interpolated for the cumulative counters. Average workers are time-weighted, retain fractional values, and use the last observed count between samples. A gap longer than six game seconds suppresses rates until a continuous window is available. Rewound time or decreasing counters reset the window; repeated paused instants add no elapsed worker time. These are sampling estimates, not continuous per-frame measurements.
 
 Worker assignment is inferred from unit targets/carried resources. Drop-off, idle/building tasks, special sources such as Khitan pastures, and non-villager income can distort it. These rates are diagnostics, not an exact “efficiency percentage.” Exact TC idle time is not inferred from missing villager growth: research, age advancement, and other TC actions must be distinguished first.
 
