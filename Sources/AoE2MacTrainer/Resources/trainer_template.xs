@@ -22,8 +22,18 @@ int trainerVillagerIDs = -1;
 int trainerStepCount = 0;
 int trainerStepTimes = -1;
 int trainerStepVillagers = -1;
+int trainerStepFood = -1;
+int trainerStepWood = -1;
+int trainerStepGold = -1;
+int trainerStepStone = -1;
+int trainerStepDoneTimes = -1;
 int trainerStepLabels = -1;
 int trainerBuildNames = -1;
+int trainerUnitGoalCount = 0;
+int trainerUnitGoalSteps = -1;
+int trainerUnitGoalObjects = -1;
+int trainerUnitGoalCounts = -1;
+int trainerUnitGoalLabels = -1;
 
 void trainerLoadPlan() {
     // @PLAN_SETUP@
@@ -129,30 +139,150 @@ string trainerRateLine(string label, int rate, int workers) {
     return line;
 }
 
-// The active build step follows its reference TIME. Numeric goals are assessed,
-// but building placement/actual command completion cannot be inferred here.
-string trainerPlanLine(int now, int villagers) {
-    if (trainerStepCount <= 0) {
-        return "No build selected";
+// Goals are lower bounds, not exact counts. A step with no numeric goals is
+// manual-only: timing cannot prove that the requested action occurred.
+bool trainerHasGoal(int step) {
+    if (xsArrayGetInt(trainerStepVillagers, step) >= 0 ||
+        xsArrayGetInt(trainerStepFood, step) > 0 ||
+        xsArrayGetInt(trainerStepWood, step) > 0 ||
+        xsArrayGetInt(trainerStepGold, step) > 0 ||
+        xsArrayGetInt(trainerStepStone, step) > 0) {
+        return true;
     }
-    int step = 0;
+    for (int i = 0; i < trainerUnitGoalCount; i = i + 1) {
+        if (xsArrayGetInt(trainerUnitGoalSteps, i) == step) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool trainerGoalIsMet(int step, int player, int villagers,
+                      int foodWorkers, int woodWorkers, int goldWorkers, int stoneWorkers) {
+    int target = xsArrayGetInt(trainerStepVillagers, step);
+    if (target >= 0 && villagers < target) {
+        return false;
+    }
+    target = xsArrayGetInt(trainerStepFood, step);
+    if (target > 0 && foodWorkers < target) {
+        return false;
+    }
+    target = xsArrayGetInt(trainerStepWood, step);
+    if (target > 0 && woodWorkers < target) {
+        return false;
+    }
+    target = xsArrayGetInt(trainerStepGold, step);
+    if (target > 0 && goldWorkers < target) {
+        return false;
+    }
+    target = xsArrayGetInt(trainerStepStone, step);
+    if (target > 0 && stoneWorkers < target) {
+        return false;
+    }
+    for (int i = 0; i < trainerUnitGoalCount; i = i + 1) {
+        if (xsArrayGetInt(trainerUnitGoalSteps, i) == step &&
+            xsGetObjectCount(player, xsArrayGetInt(trainerUnitGoalObjects, i)) <
+            xsArrayGetInt(trainerUnitGoalCounts, i)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// Remember the *first* time the full numeric target was observed, so a late
+// completion stays late, even after the player surpasses the goal.
+void trainerTrackGoals(int player, int now, int villagers,
+                       int foodWorkers, int woodWorkers, int goldWorkers, int stoneWorkers) {
+    infiniteLoopLimit 1000;
     for (int i = 0; i < trainerStepCount; i = i + 1) {
-        int at = xsArrayGetInt(trainerStepTimes, i);
-        if (at <= now && at >= 0) {
-            step = i;
+        if (xsArrayGetInt(trainerStepDoneTimes, i) < 0 && trainerHasGoal(i) &&
+            trainerGoalIsMet(i, player, villagers, foodWorkers, woodWorkers, goldWorkers, stoneWorkers)) {
+            xsArraySetInt(trainerStepDoneTimes, i, now);
         }
     }
-    int goal = xsArrayGetInt(trainerStepVillagers, step);
-    string label = xsArrayGetString(trainerStepLabels, step);
-    string state = "";
-    if (goal >= 0) {
-        if (villagers >= goal) {
-            state = " [VILS OK]";
-        } else {
-            state = " [VILS " + villagers + "/" + goal + "]";
+}
+
+int trainerActiveStep(int now) {
+    int selected = 0;
+    for (int i = 0; i < trainerStepCount; i = i + 1) {
+        int deadline = xsArrayGetInt(trainerStepTimes, i);
+        if (deadline >= 0 && deadline <= now) {
+            selected = i;
         }
     }
-    return "STEP " + (step + 1) + "/" + trainerStepCount + ": " + label + state;
+    return selected;
+}
+
+string trainerStepStatus(int step, int now) {
+    if (!trainerHasGoal(step)) {
+        return "MANUAL ACTION";
+    }
+    int deadline = xsArrayGetInt(trainerStepTimes, step);
+    int achieved = xsArrayGetInt(trainerStepDoneTimes, step);
+    if (achieved >= 0) {
+        if (deadline < 0) {
+            return "GOAL MET";
+        }
+        int offset = achieved - deadline;
+        if (offset <= 0) {
+            return "MET EARLY " + (0 - offset) + "s";
+        }
+        return "MET LATE +" + offset + "s";
+    }
+    if (deadline >= 0 && now > deadline) {
+        return "LATE +" + (now - deadline) + "s";
+    }
+    if (deadline >= 0) {
+        return "DUE IN " + (deadline - now) + "s";
+    }
+    return "WAITING";
+}
+
+string trainerGoalProgress(int step, int player, int villagers,
+                           int foodWorkers, int woodWorkers, int goldWorkers, int stoneWorkers) {
+    string line = "TARGET:";
+    int target = xsArrayGetInt(trainerStepVillagers, step);
+    if (target >= 0) {
+        line = line + " V " + villagers + "/" + target;
+    }
+    target = xsArrayGetInt(trainerStepFood, step);
+    if (target > 0) {
+        line = line + " F ~" + foodWorkers + "/" + target;
+    }
+    target = xsArrayGetInt(trainerStepWood, step);
+    if (target > 0) {
+        line = line + " W ~" + woodWorkers + "/" + target;
+    }
+    target = xsArrayGetInt(trainerStepGold, step);
+    if (target > 0) {
+        line = line + " G ~" + goldWorkers + "/" + target;
+    }
+    target = xsArrayGetInt(trainerStepStone, step);
+    if (target > 0) {
+        line = line + " S ~" + stoneWorkers + "/" + target;
+    }
+    for (int i = 0; i < trainerUnitGoalCount; i = i + 1) {
+        if (xsArrayGetInt(trainerUnitGoalSteps, i) == step) {
+            int id = xsArrayGetInt(trainerUnitGoalObjects, i);
+            int minimum = xsArrayGetInt(trainerUnitGoalCounts, i);
+            line = line + " " + xsArrayGetString(trainerUnitGoalLabels, i) + " " +
+                   xsGetObjectCount(player, id) + "/" + minimum;
+        }
+    }
+    return line;
+}
+
+int trainerMissedCheckpoints(int now) {
+    int missed = 0;
+    for (int i = 0; i < trainerStepCount; i = i + 1) {
+        int deadline = xsArrayGetInt(trainerStepTimes, i);
+        int achieved = xsArrayGetInt(trainerStepDoneTimes, i);
+        if (deadline >= 0 && deadline < now && trainerHasGoal(i) &&
+            (achieved < 0 || achieved > deadline)) {
+            missed = missed + 1;
+        }
+    }
+    return missed;
 }
 
 rule trainerMetrics
@@ -188,6 +318,12 @@ rule trainerMetrics
         trainerSampleCount = trainerSampleCount + 1;
     }
     trainerWriteIndex = (trainerWriteIndex + 1) % trainerHistorySize;
+    int lastIndex = (trainerWriteIndex + trainerHistorySize - 1) % trainerHistorySize;
+    int foodWorkers = xsArrayGetInt(trainerWorkersFood, lastIndex);
+    int woodWorkers = xsArrayGetInt(trainerWorkersWood, lastIndex);
+    int goldWorkers = xsArrayGetInt(trainerWorkersGold, lastIndex);
+    int stoneWorkers = xsArrayGetInt(trainerWorkersStone, lastIndex);
+    trainerTrackGoals(player, now, villagers, foodWorkers, woodWorkers, goldWorkers, stoneWorkers);
 
     int baselineIndex = -1;
     int baselineTime = -1;
@@ -208,7 +344,12 @@ rule trainerMetrics
     int windowStart = now - trainerWindowSeconds;
 
     string text = "TRAINER | " + (now / 60) + "m " + (now % 60) + "s | " + xsArrayGetString(trainerBuildNames, 0);
-    text = text + "\n" + trainerPlanLine(now, villagers);
+    int step = trainerActiveStep(now);
+    text = text + "\nSTEP " + (step + 1) + "/" + trainerStepCount +
+           " " + trainerStepStatus(step, now) + ": " + xsArrayGetString(trainerStepLabels, step);
+    text = text + "\n" + trainerGoalProgress(step, player, villagers,
+                           foodWorkers, woodWorkers, goldWorkers, stoneWorkers);
+    text = text + "\nMISSED CHECKPOINTS: " + trainerMissedCheckpoints(now);
     text = text + "\n" + trainerRateLine("FOOD", rateFood, trainerAverageWorkers(trainerWorkersFood, windowStart));
     text = text + "\n" + trainerRateLine("WOOD", rateWood, trainerAverageWorkers(trainerWorkersWood, windowStart));
     text = text + "\n" + trainerRateLine("GOLD", rateGold, trainerAverageWorkers(trainerWorkersGold, windowStart));

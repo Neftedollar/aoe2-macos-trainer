@@ -4,7 +4,7 @@ A native macOS training HUD for **Age of Empires II: Definitive Edition**, desig
 
 The goal is to help 1v1 players practice unfamiliar civilizations without leaving their match. The overlay floats over the game and lets mouse clicks pass through to AoE2.
 
-## Current status (v0.3 experimental)
+## Current status (experimental)
 
 - Native transparent `NSPanel` overlay (SwiftUI + AppKit)
 - Click-through window with support for macOS fullscreen Spaces
@@ -16,9 +16,11 @@ The goal is to help 1v1 players practice unfamiliar civilizations without leavin
 - Custom JSON file in `~/Library/Application Support/AoE2MacTrainer/builds.json`, reloadable from the menu without rebuilding
 - Experimental in-game XS dashboard: actual game time, build steps, villager target, four **gross resource-collected rates** per rolling 60 game seconds
 - Approximate number of workers assigned to each resource and per-worker rates, based on the villager task target / cargo
+- Time-based XS **checkpoints** with measurable targets for total villagers, workers on each resource and current units/buildings by object ID
+- Goal status in-game: due in N seconds, missed deadline, completed early/late, and missed-checkpoint count
 - XCTest unit tests and GitHub Actions macOS build
 
-**Not implemented yet:** automatically detecting civilization/map, a verified real-time link from XS to the external macOS overlay, exact TC idle time, reliable per-worker assignment, and post-game replay analysis. The native overlay still uses an **estimated clock** started by hand; the XS instructions use the **actual in-game clock**. All sample build timings remain unverified training placeholders, **not competitive benchmarks**.
+**Not implemented yet:** automatically detecting civilization/map, a verified real-time link from XS to the external macOS overlay, exact TC idle time, identifying villagers on a specific boar reliably, precise per-worker assignment, and post-game replay analysis. The native overlay still uses an **estimated clock** started by hand; the XS instructions use the **actual in-game clock**. All sample build timings remain unverified training placeholders, **not competitive benchmarks**.
 
 ## Get started
 
@@ -38,9 +40,40 @@ The app appears as 🏰 in the macOS menu bar. Launch AoE2 DE in **Windowed/Bord
    For custom steps, choose **Открыть пользовательский JSON…**, add your build objects to the `[]` array (using `Resources/builds.json` as the schema), and choose **Перезагрузить JSON-билды**. Custom entries with the same `id` override packaged builds.
 2. Choose **Экспорт XS для выбранного билда…** and save the generated `.xs` script.
 3. In your *custom* AoE2 Random Map Script (`.rms`), add `#includeXS your_file.xs` at the top, before `<PLAYER_SETUP>`. Place the `.xs` file where that RMS can resolve it (game's `resources/_common/xs` or a compatible local mod). The exact location and installation flow of the **native Feral macOS port is not yet validated**.
-4. Start a custom-map match against AI. Once the script loads, its own game-native instruction panel should display the selected build's timed target, collected resources/minute and approximate resource-worker counts. A full 60-game-second window is needed before the first rate appears.
+4. Start a custom-map match against AI. Once the script loads, its own game-native instruction panel should display the selected build's checkpoint, goal progress, deadline status, collected resources/minute and approximate resource-worker counts. A full 60-game-second window is needed before the first rate appears.
 
 **Important:** the native XS display is separate from the SwiftUI overlay. It follows build step *reference times*, whereas the macOS overlay's steps are manually controlled by hotkeys. The XS panel is placed by AoE2 at its built-in **top instruction position** (about 13% from the top), not at an arbitrary pixel coordinate. Neither runtime gameplay nor script loading on macOS has been verified yet.
+
+### Timed checkpoints and JSON goals
+
+The custom file is a **JSON array** of build definitions; the full schema is the bundled `Sources/AoE2MacTrainer/Resources/builds.json`.
+
+```json
+[
+  {
+    "id": "my-arabia-goals",
+    "name": "My first 10 minutes",
+    "civilization": "Любая",
+    "map": "Аравия",
+    "strategy": "Scouts",
+    "description": "Custom training checkpoints",
+    "steps": [
+      { "action": "6 villagers on food", "targetTimeSeconds": 75, "targetVillagers": 6,
+        "allocation": { "food": 6, "wood": 0, "gold": 0, "stone": 0 } },
+      { "action": "Reach 20 villagers and build a stable", "targetTimeSeconds": 600,
+        "targetVillagers": 20,
+        "allocation": { "food": 8, "wood": 7, "gold": 0, "stone": 0 },
+        "unitGoals": [{ "objectId": 101, "count": 1, "label": "Stable" }] }
+    ]
+  }
+]
+```
+
+`targetTimeSeconds` is **in-game time**, e.g. `600` means 10:00. Targets are minimums, not exact worker allocations: if food target is 6, having 7 qualifies. `targetVillagers` checks currently living villagers. `unitGoals` uses AoE2 object IDs to check the **current count** of owned units/buildings (e.g. `101` stable, `87` archery range, `448` scout cavalry, `4` archer); it does not reliably prove that a building has finished construction or that a given production action was executed. Unit counts can be affected by units dying or upgrades. Object IDs can change with regional units or game modes.
+
+The XS rule samples every **2 in-game seconds** and records the first time each measurable goal is seen as achieved. `MET EARLY` / `MET LATE` compares that observation to the deadline; `LATE` means unmet and overdue. `MISSED CHECKPOINTS` summarizes unfinished or late goals. The currently displayed step follows the timeline even if an earlier target was missed. Steps without measurable goals are labelled `MANUAL ACTION` and cannot be automatically verified.
+
+Worker assignment is **approximate**: XS infers it from the villager's current target or carried resource. Therefore `allocation.food` means roughly “villagers working on food”, not “villagers specifically on this boar”. Accurate boar-only targets are **not implemented**. Building, queue and exact TC-idle checks also need more engine-level validation.
 
 The XS script reads **only the local player's** cumulative resource-collected counters (`166..169`) rather than subtracting resource stockpiles: buying units does **not** reduce the measured gathering rate. These counters can also reflect resource generation from non-villager sources; worker counts are estimates based on unit targets and carried materials, and cannot distinguish every builder/returning/idle villager. **Per-worker rates are diagnostic approximations.**
 
@@ -79,8 +112,8 @@ The script does not change the world, create units, issue commands, or inspect o
 
 1. Verify overlay placement and hotkeys against the official macOS Steam build.
 2. Validate XS script execution in a native Mac Steam custom RMS, including custom mod deployment paths and whether the instruction panel refreshes correctly.
-3. Validate XS total-collected counters and approximate worker classifications during a 1v1 against AI, including villager drop-off, farms and fishing.
-4. Improve JSON plans with validated first-ten-minute milestones; add explicit target completion semantics and manual navigation inside game when possible.
+3. Validate XS total-collected counters, timed checkpoint status, unit counts and approximate worker classifications during a 1v1 against AI, including villager drop-off, farms and fishing.
+4. Improve JSON plans with validated first-ten-minute milestones; add in-game build selection / manual navigation if the game exposes a safe XS input mechanism.
 5. Research an officially supported in-game to native-app bridge; do not assume `.xsdat` supports live transfer. Add exact TC production idle metrics if data permits.
 6. Defer replay parsing and post-game analytics until the live trainer is useful.
 
