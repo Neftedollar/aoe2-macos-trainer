@@ -5,11 +5,39 @@ import XCTest
 final class BuildOrderTests: XCTestCase {
     func testBundledBuildsHaveUniqueIDsAndSteps() {
         let builds = BuildOrderLibrary.bundled()
-        XCTAssertGreaterThanOrEqual(builds.count, 5)
+        XCTAssertGreaterThanOrEqual(builds.count, 10)
         XCTAssertEqual(Set(builds.map(\.id)).count, builds.count)
         XCTAssertTrue(builds.allSatisfy { !$0.steps.isEmpty })
         XCTAssertTrue(builds.contains { $0.civilization == "Португальцы" })
         XCTAssertTrue(builds.contains { $0.civilization == "Испанцы" })
+        XCTAssertTrue(builds.contains { $0.civilizations == ["Армяне", "Грузины"] })
+    }
+
+    func testMultipleCivilizationsRoundTrip() throws {
+        let original = try XCTUnwrap(BuildOrderLibrary.bundled().first {
+            $0.civilizations == ["Армяне", "Грузины"]
+        })
+        let decoded = try BuildOrderLibrary.decode(JSONEncoder().encode([original]))
+        XCTAssertEqual(decoded[0].civilizations, ["Армяне", "Грузины"])
+        XCTAssertEqual(decoded[0].civilization, "Армяне, Грузины")
+    }
+
+    func testOldStringCivilizationJSONStillLoads() throws {
+        let legacy = """
+        [{"id":"old","name":"Old","civilization":"Португальцы","map":"Арена",
+          "strategy":"Fast Castle","description":"Old format","steps":[{"action":"Start","targetTimeSeconds":0}]}]
+        """
+        let build = try XCTUnwrap(BuildOrderLibrary.decode(Data(legacy.utf8)).first)
+        XCTAssertEqual(build.civilizations, ["Португальцы"])
+    }
+
+    func testUnsafeMapScriptFileIsRejected() throws {
+        let original = try XCTUnwrap(BuildOrderLibrary.bundled().first)
+        let invalid = BuildOrder(
+            id: "unsafe-map", name: "Unsafe", civilizations: ["Любая"], map: "Арена",
+            mapScriptFile: "../Arena.rms", strategy: "FC", description: "", steps: original.steps
+        )
+        XCTAssertThrowsError(try BuildOrderLibrary.decode(JSONEncoder().encode([invalid])))
     }
 
     func testDuplicateIDsAreRejected() throws {

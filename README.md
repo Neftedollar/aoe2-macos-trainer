@@ -10,10 +10,12 @@ The goal is to help 1v1 players practice unfamiliar civilizations without leavin
 - Click-through window with support for macOS fullscreen Spaces
 - Menu-bar controller; no Dock icon
 - Global hotkeys for build navigation, build selection, overlay visibility and timer control
-- Five sample builds: generic scouts, archers, Arena Fast Castle, Portuguese Fast Castle, Spanish Castle Drop
+- Ten sample builds, including Arabia Scouts/Archers, Arena Fast Castle, Portuguese FC, Spanish Castle Drop, Armenian/Georgian FC, Fast Castle Knights, FC Monks, Fast Imperial, and Amazon Tunnel Boom
 - Training timer calibrated to **1.7x** normal AoE2 game speed
 - XS script exporter that turns the selected **JSON build** into a self-contained `.xs` trainer
 - Custom JSON file in `~/Library/Application Support/AoE2MacTrainer/builds.json`, reloadable from the menu without rebuilding
+- JSON `civilizations` array permits multiple applicable civilizations for the same strategy (older `civilization` string files still load)
+- Local XS **mod packager**: creates a standalone training map mod with `.rms` and `.xs` files; auto-detects the Feral macOS profile if present and allows choosing a source `.rms` file
 - Experimental in-game XS dashboard: actual game time, build steps, villager target, four **gross resource-collected rates** per rolling 60 game seconds
 - Approximate number of workers assigned to each resource and per-worker rates, based on the villager task target / cargo
 - Time-based XS **checkpoints** with measurable targets for total villagers, workers on each resource and current units/buildings by object ID
@@ -38,11 +40,31 @@ The app appears as 🏰 in the macOS menu bar. Launch AoE2 DE in **Windowed/Bord
 
 1. Select a build using the 🏰 menu or `Ctrl+Option+B`.
    For custom steps, choose **Открыть пользовательский JSON…**, add your build objects to the `[]` array (using `Resources/builds.json` as the schema), and choose **Перезагрузить JSON-билды**. Custom entries with the same `id` override packaged builds.
-2. Choose **Экспорт XS для выбранного билда…** and save the generated `.xs` script.
-3. In your *custom* AoE2 Random Map Script (`.rms`), add `#includeXS your_file.xs` at the top, before `<PLAYER_SETUP>`. Place the `.xs` file where that RMS can resolve it (game's `resources/_common/xs` or a compatible local mod). The exact location and installation flow of the **native Feral macOS port is not yet validated**.
-4. Start a custom-map match against AI. Once the script loads, its own game-native instruction panel should display the selected build's checkpoint, goal progress, deadline status, collected resources/minute and approximate resource-worker counts. A full 60-game-second window is needed before the first rate appears.
+2. For an Arena/Arabia/Nomad build, choose **Создать локальный XS-мод…**. This generates a **new** local mod containing both the XS and a custom RMS that tries to include the game's standard map. For a custom map (e.g. Amazon Tunnel), choose **Создать XS-мод из RMS-файла…** and select an existing `.rms` or `.rms2` file that you own.
+3. The app discovers macOS Feral profiles under `~/Library/Application Support/Feral Interactive/Age Of Empires II/VFS/User/Games/Age of Empires 2 DE/<steam-id>/mods/local`. If one profile is found, it writes the new mod there. Otherwise select the `mods/local` folder manually, or another export destination and move the result to the actual `mods/local` afterwards. **Only new directories are created; installed game files and previous mods are never overwritten.**
+4. In AoE2, open **Mods → Installed Mods** and enable the new local mod if necessary, then start a **Custom Map** match (Skirmish) against the desired AI difficulty. Select the generated `AoE2Trainer_*` map, **not** the unmodified standard map. Once loaded, XS should display the current checkpoint, goal progress, deadlines, resource collection/minute and approximate worker distribution directly in the game. A full 60-game-second window is needed before the first rate appears.
 
-**Important:** the native XS display is separate from the SwiftUI overlay. It follows build step *reference times*, whereas the macOS overlay's steps are manually controlled by hotkeys. The XS panel is placed by AoE2 at its built-in **top instruction position** (about 13% from the top), not at an arbitrary pixel coordinate. Neither runtime gameplay nor script loading on macOS has been verified yet.
+The wrapper RMS for built-in maps contains only:
+
+```text
+#includeXS aoe2trainer_YOUR-BUILD.xs
+#include_drs Arena.rms
+```
+
+The wrapper assumes the game exposes `Arena.rms` through its standard data-archive includes. **This exact macOS deployment and wrapper behavior has not been tested in the game.** If it fails, use the second menu option to package a copy of an existing RMS instead. Third-party RMS scripts that depend on relative custom include files may require those dependencies to be installed as well.
+
+The generated mod layout is:
+
+```text
+AoE2Trainer_example/
+  info.json
+  resources/_common/random-map-scripts/AoE2Trainer_example.rms
+  resources/_common/xs/aoe2trainer_example.xs
+```
+
+The old **Экспорт XS для выбранного билда…** command is still available if you prefer manual integration into an existing RMS. The XS file must be referenced by `#includeXS` **before** `<PLAYER_SETUP>`.
+
+**Important:** the native XS display is separate from the SwiftUI overlay. The macOS HUD shows the selected JSON `name` prominently and the `civilizations` list, and lets you cycle through builds via `Ctrl+Option+B`; its steps are manually controlled by hotkeys. The **exported XS module is a snapshot** of the build selected when the mod was generated. To change the live XS script's build, generate/select a different training mod before the match. The XS panel follows actual in-game time and is placed by AoE2 at its built-in **top instruction position** (about 13% from the top), not at an arbitrary pixel coordinate. Neither runtime gameplay nor script loading on macOS has been verified yet.
 
 ### Timed checkpoints and JSON goals
 
@@ -53,8 +75,9 @@ The custom file is a **JSON array** of build definitions; the full schema is the
   {
     "id": "my-arabia-goals",
     "name": "My first 10 minutes",
-    "civilization": "Любая",
+    "civilizations": ["Армяне", "Грузины"],
     "map": "Аравия",
+    "mapScriptFile": "Arabia.rms",
     "strategy": "Scouts",
     "description": "Custom training checkpoints",
     "steps": [
@@ -70,6 +93,8 @@ The custom file is a **JSON array** of build definitions; the full schema is the
 ```
 
 `targetTimeSeconds` is **in-game time**, e.g. `600` means 10:00. Targets are minimums, not exact worker allocations: if food target is 6, having 7 qualifies. `targetVillagers` checks currently living villagers. `unitGoals` uses AoE2 object IDs to check the **current count** of owned units/buildings (e.g. `101` stable, `87` archery range, `448` scout cavalry, `4` archer); it does not reliably prove that a building has finished construction or that a given production action was executed. Unit counts can be affected by units dying or upgrades. Object IDs can change with regional units or game modes.
+
+`civilizations` accepts any non-empty list of display names; the app does **not** auto-detect the current civilization yet. Legacy custom JSON with the singular `"civilization": "Португальцы"` continues to work; new JSON may also use a `"civilization"` string array, but `civilizations` is preferred. `mapScriptFile` is optional: it names a built-in `.rms` included with `#include_drs` and can be specified for a custom map if you know its exact game file name. For imported RMS files, use the dedicated menu command. The JSON must contain one or more steps ordered by `targetTimeSeconds`.
 
 The XS rule samples every **2 in-game seconds** and records the first time each measurable goal is seen as achieved. `MET EARLY` / `MET LATE` compares that observation to the deadline; `LATE` means unmet and overdue. `MISSED CHECKPOINTS` summarizes unfinished or late goals. The currently displayed step follows the timeline even if an earlier target was missed. Steps without measurable goals are labelled `MANUAL ACTION` and cannot be automatically verified.
 
@@ -106,15 +131,16 @@ The script does not change the world, create units, issue commands, or inspect o
 | `HotkeyManager.swift` | Global Carbon hotkeys without injecting input into AoE2 |
 | `Resources/builds.json` | Starter training plans (placeholders) |
 | `XSBuildExporter.swift` | Turns a selected JSON build into standalone XS source |
+| `TrainingModPackager.swift` | Creates a local AoE2 mod with RMS + XS without overwriting game files or existing mods |
 | `Resources/trainer_template.xs` | XS rolling economy metrics and game-native instruction panel |
 
 ## Next milestones
 
 1. Verify overlay placement and hotkeys against the official macOS Steam build.
-2. Validate XS script execution in a native Mac Steam custom RMS, including custom mod deployment paths and whether the instruction panel refreshes correctly.
+2. Validate the auto-installed local mod and `#include_drs` wrapper in a native Mac Steam custom RMS, including whether the instruction panel refreshes correctly.
 3. Validate XS total-collected counters, timed checkpoint status, unit counts and approximate worker classifications during a 1v1 against AI, including villager drop-off, farms and fishing.
 4. Improve JSON plans with validated first-ten-minute milestones; add in-game build selection / manual navigation if the game exposes a safe XS input mechanism.
-5. Research an officially supported in-game to native-app bridge; do not assume `.xsdat` supports live transfer. Add exact TC production idle metrics if data permits.
+5. Research an officially supported in-game to native-app bridge; do not assume `.xsdat` supports live transfer. The engine's per-unit `cUnitActionId` may help diagnose TC state, but whether training is reflected reliably is unverified; do **not** label derived guesses as exact TC idle time.
 6. Defer replay parsing and post-game analytics until the live trainer is useful.
 
 Online competitive use of scripted coaching has not been verified against the game's fair-play policy. Until that is clarified, use the XS-enhanced features in explicitly supported custom single-player training maps.

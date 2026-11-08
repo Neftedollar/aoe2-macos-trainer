@@ -55,14 +55,75 @@ struct BuildStep: Codable, Equatable {
 struct BuildOrder: Codable, Identifiable, Equatable {
     let id: String
     let name: String
-    let civilization: String
+    let civilizations: [String]
     let map: String
+    /// Optional standard RMS filename from the game's own bundled scripts.
+    let mapScriptFile: String?
     let strategy: String
     let description: String
     let steps: [BuildStep]
 
+    // Legacy property retained for existing UI call sites and integrations.
+    var civilization: String { civilizations.joined(separator: ", ") }
+
+    init(id: String, name: String, civilizations: [String], map: String,
+         mapScriptFile: String? = nil, strategy: String, description: String, steps: [BuildStep]) {
+        self.id = id
+        self.name = name
+        self.civilizations = civilizations
+        self.map = map
+        self.mapScriptFile = mapScriptFile
+        self.strategy = strategy
+        self.description = description
+        self.steps = steps
+    }
+
+    init(id: String, name: String, civilization: String, map: String,
+         strategy: String, description: String, steps: [BuildStep]) {
+        self.init(id: id, name: name, civilizations: [civilization], map: map,
+                  strategy: strategy, description: description, steps: steps)
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, civilizations, civilization, map, mapScriptFile, strategy, description, steps
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        name = try c.decode(String.self, forKey: .name)
+        if let names = try c.decodeIfPresent([String].self, forKey: .civilizations) {
+            civilizations = names
+        } else if let names = try? c.decode([String].self, forKey: .civilization) {
+            civilizations = names
+        } else {
+            civilizations = [try c.decode(String.self, forKey: .civilization)]
+        }
+        map = try c.decode(String.self, forKey: .map)
+        mapScriptFile = try c.decodeIfPresent(String.self, forKey: .mapScriptFile)
+        strategy = try c.decode(String.self, forKey: .strategy)
+        description = try c.decode(String.self, forKey: .description)
+        steps = try c.decode([BuildStep].self, forKey: .steps)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(name, forKey: .name)
+        try c.encode(civilizations, forKey: .civilizations)
+        try c.encode(map, forKey: .map)
+        try c.encodeIfPresent(mapScriptFile, forKey: .mapScriptFile)
+        try c.encode(strategy, forKey: .strategy)
+        try c.encode(description, forKey: .description)
+        try c.encode(steps, forKey: .steps)
+    }
+
     var hasValidGoalsAndTimeline: Bool {
-        guard !steps.isEmpty, steps.count <= 200, steps.allSatisfy(\.isValid) else { return false }
+        guard !name.isEmpty, !civilizations.isEmpty,
+              civilizations.allSatisfy({ !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }),
+              !map.isEmpty,
+              mapScriptFile.map({ !($0.contains("/") || $0.contains("\\") || $0.contains("\n") || $0.contains("\r") || $0.contains("\"")) && $0.lowercased().hasSuffix(".rms") }) ?? true,
+              !steps.isEmpty, steps.count <= 200, steps.allSatisfy(\.isValid) else { return false }
         var lastDeadline = -1
         for step in steps {
             if let time = step.targetTimeSeconds {
