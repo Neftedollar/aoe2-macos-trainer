@@ -10,6 +10,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   xs-template-check:
     name: XS template syntax and API check
@@ -82,3 +85,35 @@ jobs:
 
       - name: Validate generated XS
         run: ./xs-check generated/trainer_catalog.xs
+
+  release:
+    name: Publish requested v0.6.0 release
+    if: >-
+      github.event_name == 'push' &&
+      startsWith(github.event.head_commit.message, 'release: publish v0.6.0')
+    needs: [build, xs-template-check, xs-check]
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - name: Checkout verified source and release notes
+        uses: actions/checkout@v4
+
+      - name: Download validated application
+        uses: actions/download-artifact@v4
+        with:
+          name: AoE2MacTrainer-macos
+          path: .build/release-inputs/app
+
+      - name: Download validated XS catalog
+        uses: actions/download-artifact@v4
+        with:
+          name: Generated-XS-catalog
+          path: .build/release-inputs/xs
+
+      - name: Package, verify and publish release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_VERSION: 0.6.0
+        run: node Scripts/publish-release.mjs

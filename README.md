@@ -2,6 +2,8 @@
 
 A native macOS companion and **XS training module** for Age of Empires II: Definitive Edition. Public, MIT-licensed, experimental. No OCR, screen capture, process-memory access, or automatic game orders.
 
+**Download:** [v0.6.0 release and installation notes](https://github.com/Neftedollar/aoe2-macos-trainer/releases/tag/v0.6.0). The `AoE2MacTrainer-0.6.0-macos-arm64.zip` asset contains the application for Apple Silicon. Generated XS, the JSON catalog and SHA-256 checksums are separate assets; only the application ZIP is needed to begin. This is an experimental prerelease, not an in-game-verified trainer.
+
 ## What works in each part
 
 | Component | Implemented behavior | Important limitation |
