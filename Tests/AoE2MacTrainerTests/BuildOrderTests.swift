@@ -18,6 +18,46 @@ final class BuildOrderTests: XCTestCase {
         XCTAssertThrowsError(try BuildOrderLibrary.decode(data))
     }
 
+    func testInvalidGoalIDsAndCountsAreRejected() throws {
+        let original = try XCTUnwrap(BuildOrderLibrary.bundled().first)
+        let invalid = BuildOrder(
+            id: "bad-goals", name: "Bad Goals", civilization: original.civilization,
+            map: original.map, strategy: original.strategy, description: "",
+            steps: [BuildStep(
+                action: "Impossible goal", targetTimeSeconds: 600,
+                allocation: ResourceAllocation(food: -1, wood: 1, gold: 0, stone: 0),
+                unitGoals: [UnitGoal(objectId: -1, count: 1, label: "Stable")]
+            )]
+        )
+        XCTAssertThrowsError(try BuildOrderLibrary.decode(JSONEncoder().encode([invalid])))
+        XCTAssertThrowsError(try XSBuildExporter.generate(for: invalid))
+    }
+
+    func testDuplicateUnitGoalsAreRejected() throws {
+        let original = try XCTUnwrap(BuildOrderLibrary.bundled().first)
+        let duplicate = BuildOrder(
+            id: "duplicate-goal", name: "Duplicate", civilization: original.civilization,
+            map: original.map, strategy: original.strategy, description: "",
+            steps: [BuildStep(
+                action: "Two entries for the same object", targetTimeSeconds: 600,
+                unitGoals: [UnitGoal(objectId: 101, count: 1, label: "Stable"),
+                            UnitGoal(objectId: 101, count: 2, label: "Stable")]
+            )]
+        )
+        XCTAssertThrowsError(try BuildOrderLibrary.decode(JSONEncoder().encode([duplicate])))
+    }
+
+    func testChronologicalGoalsMustBeOrdered() throws {
+        let original = try XCTUnwrap(BuildOrderLibrary.bundled().first)
+        let unordered = BuildOrder(
+            id: "unordered", name: "Unordered", civilization: original.civilization,
+            map: original.map, strategy: original.strategy, description: "",
+            steps: [BuildStep(action: "Second", targetTimeSeconds: 600),
+                    BuildStep(action: "First", targetTimeSeconds: 120)]
+        )
+        XCTAssertThrowsError(try BuildOrderLibrary.decode(JSONEncoder().encode([unordered])))
+    }
+
     func testCustomBuildOverridesBundledID() throws {
         let original = try XCTUnwrap(BuildOrderLibrary.bundled().first)
         let custom = BuildOrder(

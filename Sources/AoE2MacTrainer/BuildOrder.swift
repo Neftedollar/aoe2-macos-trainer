@@ -5,6 +5,18 @@ struct ResourceAllocation: Codable, Equatable {
     let wood: Int
     let gold: Int
     let stone: Int
+
+    var isValid: Bool { [food, wood, gold, stone].allSatisfy { $0 >= 0 } }
+}
+
+/// A minimum number of currently owned objects of a specific AoE2 object ID.
+/// Buildings and units share the same IDs in the XS API.
+struct UnitGoal: Codable, Equatable {
+    let objectId: Int
+    let count: Int
+    let label: String
+
+    var isValid: Bool { objectId > 0 && count > 0 && !label.isEmpty }
 }
 
 struct BuildStep: Codable, Equatable {
@@ -13,6 +25,31 @@ struct BuildStep: Codable, Equatable {
     let targetTimeSeconds: Int?
     let allocation: ResourceAllocation?
     let note: String?
+    let unitGoals: [UnitGoal]?
+
+    init(
+        action: String,
+        targetVillagers: Int? = nil,
+        targetTimeSeconds: Int? = nil,
+        allocation: ResourceAllocation? = nil,
+        note: String? = nil,
+        unitGoals: [UnitGoal]? = nil
+    ) {
+        self.action = action
+        self.targetVillagers = targetVillagers
+        self.targetTimeSeconds = targetTimeSeconds
+        self.allocation = allocation
+        self.note = note
+        self.unitGoals = unitGoals
+    }
+
+    var isValid: Bool {
+        !action.isEmpty && (targetVillagers ?? 0) >= 0 && (targetTimeSeconds ?? 0) >= 0 &&
+            (allocation?.isValid ?? true) &&
+            (unitGoals?.count ?? 0) <= 8 &&
+            (unitGoals?.allSatisfy(\.isValid) ?? true) &&
+            Set((unitGoals ?? []).map(\.objectId)).count == (unitGoals?.count ?? 0)
+    }
 }
 
 struct BuildOrder: Codable, Identifiable, Equatable {
@@ -23,6 +60,18 @@ struct BuildOrder: Codable, Identifiable, Equatable {
     let strategy: String
     let description: String
     let steps: [BuildStep]
+
+    var hasValidGoalsAndTimeline: Bool {
+        guard !steps.isEmpty, steps.count <= 200, steps.allSatisfy(\.isValid) else { return false }
+        var lastDeadline = -1
+        for step in steps {
+            if let time = step.targetTimeSeconds {
+                if time < lastDeadline { return false }
+                lastDeadline = time
+            }
+        }
+        return true
+    }
 }
 
 enum BuildOrderLibrary {
@@ -36,6 +85,9 @@ enum BuildOrderLibrary {
         let builds = try JSONDecoder().decode([BuildOrder].self, from: data)
         guard !builds.isEmpty, builds.allSatisfy({ !$0.steps.isEmpty }) else {
             throw LibraryError.emptyBuild
+        }
+        guard builds.allSatisfy(\.hasValidGoalsAndTimeline) else {
+            throw LibraryError.invalidGoal
         }
         guard Set(builds.map(\.id)).count == builds.count else {
             throw LibraryError.duplicateID
@@ -87,8 +139,20 @@ enum BuildOrderLibrary {
         return url
     }
 
-    enum LibraryError: Error {
+    enum LibraryError: LocalizedError {
         case emptyBuild
         case duplicateID
+        case invalidGoal
+
+        var errorDescription: String? {
+            switch self {
+            case .emptyBuild:
+                return "Каждый билд должен содержать хотя бы один шаг."
+            case .duplicateID:
+                return "В JSON встречаются повторяющиеся идентификаторы билдов."
+            case .invalidGoal:
+                return "Некорректная цель или тайминг: проверь количества, objectId, порядок targetTimeSeconds и число шагов (максимум 200)."
+            }
+        }
     }
 }

@@ -14,7 +14,8 @@
       { "action": "Построй мельницу у ягод", "targetVillagers": 13, "targetTimeSeconds": 250 },
       { "action": "Второй кабан и дополнительные фермы", "targetVillagers": 17, "targetTimeSeconds": 350 },
       { "action": "Подготовь бараки и переход в Феодал", "targetVillagers": 20, "targetTimeSeconds": 430, "note": "Числа ориентировочные, адаптируй к бонусам цивилизации." },
-      { "action": "Конюшня, топор и первые скауты", "targetTimeSeconds": 580, "note": "Во время атаки не останавливай экономику." }
+      { "action": "Построй конюшню, исследуй топор", "targetTimeSeconds": 580, "unitGoals": [{ "objectId": 101, "count": 1, "label": "Stable" }], "note": "Счётчик проверяет наличие конюшни, но не улучшение топора." },
+      { "action": "Начни давление скаутами", "targetTimeSeconds": 690, "unitGoals": [{ "objectId": 448, "count": 2, "label": "Scouts" }], "note": "Число включает стартового скаута, если тот жив." }
     ]
   },
   {
@@ -30,8 +31,8 @@
       { "action": "Добавь лесорубов и построй лесопилку", "targetVillagers": 10, "targetTimeSeconds": 175 },
       { "action": "Заманивай кабана, развивай пищевую экономику", "targetVillagers": 13, "targetTimeSeconds": 250 },
       { "action": "Построй бараки перед переходом в Феодал", "targetVillagers": 21, "targetTimeSeconds": 450 },
-      { "action": "Стрельбище и кузница; поставь крестьян на золото", "targetTimeSeconds": 600 },
-      { "action": "Давление лучниками; готовь арбалеты", "targetTimeSeconds": 760 }
+      { "action": "Стрельбище и кузница; поставь крестьян на золото", "targetTimeSeconds": 600, "unitGoals": [{ "objectId": 87, "count": 1, "label": "Range" }] },
+      { "action": "Давление лучниками; готовь арбалеты", "targetTimeSeconds": 760, "unitGoals": [{ "objectId": 4, "count": 2, "label": "Archers" }] }
     ]
   },
   {

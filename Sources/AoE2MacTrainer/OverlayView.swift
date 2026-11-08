@@ -60,6 +60,13 @@ struct OverlayView: View {
                             .font(.system(size: 11))
                             .foregroundStyle(.white.opacity(0.8))
                     }
+                    if let unitGoals = step.unitGoals {
+                        ForEach(unitGoals, id: \.objectId) { goal in
+                            Text("Цель: \(goal.label) ×\(goal.count) · ID \(goal.objectId)")
+                                .font(.system(size: 11))
+                                .foregroundStyle(.white.opacity(0.8))
+                        }
+                    }
                     if let note = step.note {
                         Text(note)
                             .font(.system(size: 11))
