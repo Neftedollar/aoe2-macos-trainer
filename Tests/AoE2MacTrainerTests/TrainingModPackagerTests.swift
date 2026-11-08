@@ -83,6 +83,9 @@ final class TrainingModPackagerTests: XCTestCase {
         )
         try FileManager.default.createDirectory(at: profile, withIntermediateDirectories: true)
         let folders = TrainingModPackager.detectedLocalModFolders(home: temp)
-        XCTAssertEqual(folders, [profile.appendingPathComponent("mods/local", isDirectory: true)])
+        XCTAssertEqual(
+            folders.map { $0.resolvingSymlinksInPath() },
+            [profile.appendingPathComponent("mods/local", isDirectory: true).resolvingSymlinksInPath()]
+        )
     }
 }

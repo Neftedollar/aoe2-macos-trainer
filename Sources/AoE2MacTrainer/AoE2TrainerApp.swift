@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 @MainActor
 final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
@@ -144,7 +145,7 @@ final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
-        panel.allowedFileTypes = ["rms", "rms2"]
+        panel.allowedContentTypes = ["rms", "rms2"].compactMap { UTType(filenameExtension: $0) }
         guard panel.runModal() == .OK, let selected = panel.url else { return }
         createMod(for: build, source: .selectedRMS(selected))
     }
@@ -159,7 +160,7 @@ final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
             NSWorkspace.shared.activateFileViewerSelecting([location])
             let alert = NSAlert()
             alert.messageText = "Локальный мод создан"
-            alert.informativeText = "\(location.path)\n\nВ игре: Mods → Installed Mods, затем Skirmish → Custom Map. Загрузка в нативной версии AoE2 для Mac ещё требует проверки."
+            alert.informativeText = "\(location.path)\n\nПерезапусти AoE2, включи мод в Mods → My Mods / Installed Mods, затем Skirmish → Custom Map. Загрузка в нативной версии AoE2 для Mac ещё требует проверки."
             alert.runModal()
         } catch {
             showError("Не удалось создать тренировочный мод", error)
