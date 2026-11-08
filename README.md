@@ -13,6 +13,7 @@ The goal is to help 1v1 players practice unfamiliar civilizations without leavin
 - Five sample builds: generic scouts, archers, Arena Fast Castle, Portuguese Fast Castle, Spanish Castle Drop
 - Training timer calibrated to **1.7x** normal AoE2 game speed
 - XS script exporter that turns the selected **JSON build** into a self-contained `.xs` trainer
+- Custom JSON file in `~/Library/Application Support/AoE2MacTrainer/builds.json`, reloadable from the menu without rebuilding
 - Experimental in-game XS dashboard: actual game time, build steps, villager target, four **gross resource-collected rates** per rolling 60 game seconds
 - Approximate number of workers assigned to each resource and per-worker rates, based on the villager task target / cargo
 - XCTest unit tests and GitHub Actions macOS build
@@ -34,6 +35,7 @@ The app appears as 🏰 in the macOS menu bar. Launch AoE2 DE in **Windowed/Bord
 ### XS training module (experimental)
 
 1. Select a build using the 🏰 menu or `Ctrl+Option+B`.
+   For custom steps, choose **Открыть пользовательский JSON…**, add your build objects to the `[]` array (using `Resources/builds.json` as the schema), and choose **Перезагрузить JSON-билды**. Custom entries with the same `id` override packaged builds.
 2. Choose **Экспорт XS для выбранного билда…** and save the generated `.xs` script.
 3. In your *custom* AoE2 Random Map Script (`.rms`), add `#includeXS your_file.xs` at the top, before `<PLAYER_SETUP>`. Place the `.xs` file where that RMS can resolve it (game's `resources/_common/xs` or a compatible local mod). The exact location and installation flow of the **native Feral macOS port is not yet validated**.
 4. Start a custom-map match against AI. Once the script loads, its own game-native instruction panel should display the selected build's timed target, collected resources/minute and approximate resource-worker counts. A full 60-game-second window is needed before the first rate appears.

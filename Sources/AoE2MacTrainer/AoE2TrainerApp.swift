@@ -7,6 +7,7 @@ final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
     private var overlay: OverlayController?
     private var hotkeys: HotkeyManager?
     private var statusItem: NSStatusItem?
+    private var buildSubmenu: NSMenu?
     private var timer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -55,13 +56,11 @@ final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(.separator())
         addAction("Экспорт XS для выбранного билда…", to: menu, selector: #selector(exportXS))
+        addAction("Открыть пользовательский JSON…", to: menu, selector: #selector(openCustomBuilds))
+        addAction("Перезагрузить JSON-билды", to: menu, selector: #selector(reloadBuilds))
         let submenu = NSMenu(title: "Билд-ордер")
-        for (index, build) in state.builds.enumerated() {
-            let buildItem = NSMenuItem(title: build.name, action: #selector(selectBuild(_:)), keyEquivalent: "")
-            buildItem.tag = index
-            buildItem.target = self
-            submenu.addItem(buildItem)
-        }
+        buildSubmenu = submenu
+        populateBuildMenu()
         let buildsItem = NSMenuItem(title: "Выбрать билд-ордер", action: nil, keyEquivalent: "")
         menu.addItem(buildsItem)
         menu.setSubmenu(submenu, for: buildsItem)
@@ -84,6 +83,42 @@ final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
     @objc private func toggleOverlay() { overlay?.toggle() }
     @objc private func reset() { state.reset() }
     @objc private func quit() { NSApp.terminate(nil) }
+
+    private func populateBuildMenu() {
+        guard let submenu = buildSubmenu else { return }
+        submenu.removeAllItems()
+        for (index, build) in state.builds.enumerated() {
+            let entry = NSMenuItem(title: build.name, action: #selector(selectBuild(_:)), keyEquivalent: "")
+            entry.tag = index
+            entry.target = self
+            submenu.addItem(entry)
+        }
+    }
+
+    @objc private func openCustomBuilds() {
+        do {
+            let url = try BuildOrderLibrary.prepareCustomBuildsFile()
+            NSWorkspace.shared.activateFileViewerSelecting([url])
+        } catch {
+            showError("Не удалось открыть JSON-билды", error)
+        }
+    }
+
+    @objc private func reloadBuilds() {
+        do {
+            try state.reloadBuilds()
+            populateBuildMenu()
+        } catch {
+            showError("Ошибка в пользовательском builds.json", error)
+        }
+    }
+
+    private func showError(_ title: String, _ error: Error) {
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = error.localizedDescription
+        alert.runModal()
+    }
 
     @objc private func exportXS() {
         guard let build = state.selectedBuild else { return }

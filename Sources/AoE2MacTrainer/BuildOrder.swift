@@ -26,6 +26,12 @@ struct BuildOrder: Codable, Identifiable, Equatable {
 }
 
 enum BuildOrderLibrary {
+    static var customBuildsURL: URL {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("AoE2MacTrainer", isDirectory: true)
+            .appendingPathComponent("builds.json")
+    }
+
     static func decode(_ data: Data) throws -> [BuildOrder] {
         let builds = try JSONDecoder().decode([BuildOrder].self, from: data)
         guard !builds.isEmpty, builds.allSatisfy({ !$0.steps.isEmpty }) else {
@@ -45,6 +51,40 @@ enum BuildOrderLibrary {
             return []
         }
         return builds
+    }
+
+    static func merged(bundled: [BuildOrder], custom: [BuildOrder]) -> [BuildOrder] {
+        var result = bundled
+        for build in custom {
+            if let index = result.firstIndex(where: { $0.id == build.id }) {
+                result[index] = build
+            } else {
+                result.append(build)
+            }
+        }
+        return result
+    }
+
+    /// Custom builds override packaged IDs and can be reloaded without rebuilding the app.
+    static func loadAll() throws -> [BuildOrder] {
+        let base = bundled()
+        guard FileManager.default.fileExists(atPath: customBuildsURL.path) else { return base }
+        let data = try Data(contentsOf: customBuildsURL)
+        let custom = try JSONDecoder().decode([BuildOrder].self, from: data)
+        if custom.isEmpty { return base }
+        let validated = try decode(data)
+        return merged(bundled: base, custom: validated)
+    }
+
+    static func prepareCustomBuildsFile() throws -> URL {
+        let url = customBuildsURL
+        try FileManager.default.createDirectory(
+            at: url.deletingLastPathComponent(), withIntermediateDirectories: true
+        )
+        if !FileManager.default.fileExists(atPath: url.path) {
+            try "[]\n".write(to: url, atomically: true, encoding: .utf8)
+        }
+        return url
     }
 
     enum LibraryError: Error {

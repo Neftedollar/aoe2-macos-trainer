@@ -11,8 +11,14 @@ final class TrainerState: ObservableObject {
 
     private var clock = TrainingClock()
 
-    init(builds: [BuildOrder] = BuildOrderLibrary.bundled()) {
+    init(builds: [BuildOrder] = (try? BuildOrderLibrary.loadAll()) ?? BuildOrderLibrary.bundled()) {
         self.builds = builds
+    }
+
+    func reloadBuilds() throws {
+        builds = try BuildOrderLibrary.loadAll()
+        selectedBuildIndex = 0
+        stepIndex = 0
     }
 
     var selectedBuild: BuildOrder? {
