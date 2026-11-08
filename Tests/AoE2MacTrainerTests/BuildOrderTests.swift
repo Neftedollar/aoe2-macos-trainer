@@ -18,6 +18,18 @@ final class BuildOrderTests: XCTestCase {
         XCTAssertThrowsError(try BuildOrderLibrary.decode(data))
     }
 
+    func testCustomBuildOverridesBundledID() throws {
+        let original = try XCTUnwrap(BuildOrderLibrary.bundled().first)
+        let custom = BuildOrder(
+            id: original.id, name: "Custom", civilization: original.civilization,
+            map: original.map, strategy: original.strategy, description: "",
+            steps: original.steps
+        )
+        let merged = BuildOrderLibrary.merged(bundled: [original], custom: [custom])
+        XCTAssertEqual(merged.count, 1)
+        XCTAssertEqual(merged[0].name, "Custom")
+    }
+
     @MainActor
     func testStepNavigationClampsAndBuildSwitchResets() {
         let state = TrainerState()
