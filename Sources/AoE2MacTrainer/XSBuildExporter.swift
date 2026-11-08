@@ -1,66 +1,180 @@
 import Foundation
 
+/// Compiles a JSON catalog into a self-contained XS snapshot. The game, not
+/// the macOS preview, chooses eligible builds using its actual civilization ID.
 enum XSBuildExporter {
-    enum ExportError: Error {
+    enum ExportError: LocalizedError {
         case missingTemplate
         case invalidBuild
+        case catalogTooLarge
+
+        var errorDescription: String? {
+            switch self {
+            case .missingTemplate:
+                return "В приложении отсутствует шаблон XS-тренера."
+            case .invalidBuild:
+                return "Не удалось экспортировать каталог: проверь цивилизации, условия шагов и цели билдов."
+            case .catalogTooLarge:
+                return "Каталог для одного XS-модуля ограничен 128 билдами и 4096 шагами."
+            }
+        }
     }
 
     static func generate(for build: BuildOrder) throws -> String {
-        guard build.hasValidGoalsAndTimeline else {
+        try generate(builds: [build], preferredBuildID: build.id)
+    }
+
+    static func generate(builds: [BuildOrder], preferredBuildID: String? = nil) throws -> String {
+        guard !builds.isEmpty,
+              Set(builds.map(\.id)).count == builds.count,
+              builds.allSatisfy(\.hasValidGoalsAndTimeline) else {
             throw ExportError.invalidBuild
+        }
+
+        let steps = builds.enumerated().flatMap { buildIndex, build in
+            build.steps.map { (buildIndex: buildIndex, step: $0) }
+        }
+        guard builds.count <= 128, steps.count <= 4096 else {
+            throw ExportError.catalogTooLarge
         }
         guard let url = Bundle.module.url(forResource: "trainer_template", withExtension: "xs"),
               let template = try? String(contentsOf: url, encoding: .utf8),
-              template.contains("// @PLAN_SETUP@") else {
+              template.contains("// @CATALOG_SETUP@") else {
             throw ExportError.missingTemplate
         }
 
-        let count = build.steps.count
-        let unitGoalCount = build.steps.reduce(0) { $0 + ($1.unitGoals?.count ?? 0) }
+        // Numeric XS IDs are the interoperability boundary; translated names
+        // are never compared with a game's localized UI strings.
+        func xsID(_ civilization: String) throws -> Int {
+            guard let definition = CivilizationCatalog.resolve(civilization) else {
+                throw ExportError.invalidBuild
+            }
+            return definition.xsID
+        }
+
+        var allowed: [(build: Int, civ: Int)] = []
+        for (index, build) in builds.enumerated() {
+            for civilization in build.civilizations {
+                allowed.append((index, try xsID(civilization)))
+            }
+        }
+        var included: [(step: Int, civ: Int)] = []
+        var excluded: [(step: Int, civ: Int)] = []
+        for (index, entry) in steps.enumerated() {
+            for civilization in entry.step.includeOnly ?? [] {
+                included.append((index, try xsID(civilization)))
+            }
+            for civilization in entry.step.exclude ?? [] {
+                excluded.append((index, try xsID(civilization)))
+            }
+        }
+        let unitGoalCount = steps.reduce(0) { $0 + ($1.step.unitGoals?.count ?? 0) }
+        let techGoalCount = steps.reduce(0) { $0 + ($1.step.technologyGoals?.count ?? 0) }
+        let maxBuildSteps = builds.map { $0.steps.count }.max() ?? 1
+        let preferredIndex = preferredBuildID.flatMap { id in builds.firstIndex { $0.id == id } } ?? -1
+
         var lines = [
-            "    trainerStepCount = \(count);",
-            "    trainerStepTimes = xsArrayCreateInt(\(count), -1, \"trainer_step_times\");",
-            "    trainerStepVillagers = xsArrayCreateInt(\(count), -1, \"trainer_step_villagers\");",
-            "    trainerStepFood = xsArrayCreateInt(\(count), -1, \"trainer_step_food\");",
-            "    trainerStepWood = xsArrayCreateInt(\(count), -1, \"trainer_step_wood\");",
-            "    trainerStepGold = xsArrayCreateInt(\(count), -1, \"trainer_step_gold\");",
-            "    trainerStepStone = xsArrayCreateInt(\(count), -1, \"trainer_step_stone\");",
-            "    trainerStepDoneTimes = xsArrayCreateInt(\(count), -1, \"trainer_step_done_times\");",
-            "    trainerStepLabels = xsArrayCreateString(\(count), \"\", \"trainer_step_labels\");",
-            "    trainerUnitGoalCount = \(unitGoalCount);",
-            "    trainerUnitGoalSteps = xsArrayCreateInt(\(max(1, unitGoalCount)), 0, \"trainer_unit_goal_steps\");",
-            "    trainerUnitGoalObjects = xsArrayCreateInt(\(max(1, unitGoalCount)), 0, \"trainer_unit_goal_objects\");",
-            "    trainerUnitGoalCounts = xsArrayCreateInt(\(max(1, unitGoalCount)), 0, \"trainer_unit_goal_counts\");",
-            "    trainerUnitGoalLabels = xsArrayCreateString(\(max(1, unitGoalCount)), \"\", \"trainer_unit_goal_labels\");",
-            "    xsArraySetString(trainerBuildNames, 0, \"\(escape(build.name))\");"
+            "    trainerBuildCount = \(builds.count);",
+            "    trainerPreferredBuild = \(preferredIndex);",
+            "    trainerStepCount = \(steps.count);",
+            "    trainerAllowedPairCount = \(allowed.count);",
+            "    trainerIncludedPairCount = \(included.count);",
+            "    trainerExcludedPairCount = \(excluded.count);"
         ]
+        func intArray(_ variable: String, _ count: Int, _ defaultValue: Int = -1) {
+            lines.append("    \(variable) = xsArrayCreateInt(\(max(1, count)), \(defaultValue), \"\(variable)\");")
+        }
+        func boolArray(_ variable: String, _ count: Int) {
+            lines.append("    \(variable) = xsArrayCreateBool(\(max(1, count)), false, \"\(variable)\");")
+        }
+        func stringArray(_ variable: String, _ count: Int) {
+            lines.append("    \(variable) = xsArrayCreateString(\(max(1, count)), \"\", \"\(variable)\");")
+        }
+        func setInt(_ variable: String, _ index: Int, _ value: Int) {
+            lines.append("    xsArraySetInt(\(variable), \(index), \(value));")
+        }
+        func setString(_ variable: String, _ index: Int, _ value: String) {
+            lines.append("    xsArraySetString(\(variable), \(index), \"\(escape(value))\");")
+        }
+
+        stringArray("trainerBuildNames", builds.count)
+        stringArray("trainerBuildMaps", builds.count)
+        boolArray("trainerBuildEnabled", builds.count)
+        intArray("trainerEligibleBuilds", builds.count)
+        intArray("trainerSelectedSteps", maxBuildSteps)
+        intArray("trainerAllowedBuilds", allowed.count)
+        intArray("trainerAllowedCivilizations", allowed.count)
+        intArray("trainerIncludedSteps", included.count)
+        intArray("trainerIncludedCivilizations", included.count)
+        intArray("trainerExcludedSteps", excluded.count)
+        intArray("trainerExcludedCivilizations", excluded.count)
+
+        for variable in ["trainerStepBuilds", "trainerStepTimes", "trainerStepVillagers",
+                         "trainerStepFood", "trainerStepWood", "trainerStepGold", "trainerStepStone",
+                         "trainerStepDoneTimes", "trainerStepUnitStarts", "trainerStepUnitCounts",
+                         "trainerStepTechStarts", "trainerStepTechCounts"] {
+            intArray(variable, steps.count)
+        }
+        boolArray("trainerStepEnabled", steps.count)
+        boolArray("trainerStepUsesIncludeOnly", steps.count)
+        stringArray("trainerStepLabels", steps.count)
+        intArray("trainerUnitGoalObjects", unitGoalCount)
+        intArray("trainerUnitGoalCounts", unitGoalCount)
+        stringArray("trainerUnitGoalLabels", unitGoalCount)
+        intArray("trainerTechGoalIDs", techGoalCount)
+        stringArray("trainerTechGoalLabels", techGoalCount)
+
+        for (index, build) in builds.enumerated() {
+            setString("trainerBuildNames", index, build.name)
+            setString("trainerBuildMaps", index, build.map)
+        }
+        for (index, pair) in allowed.enumerated() {
+            setInt("trainerAllowedBuilds", index, pair.build)
+            setInt("trainerAllowedCivilizations", index, pair.civ)
+        }
+        for (index, pair) in included.enumerated() {
+            setInt("trainerIncludedSteps", index, pair.step)
+            setInt("trainerIncludedCivilizations", index, pair.civ)
+        }
+        for (index, pair) in excluded.enumerated() {
+            setInt("trainerExcludedSteps", index, pair.step)
+            setInt("trainerExcludedCivilizations", index, pair.civ)
+        }
 
         var unitGoalIndex = 0
-        for (index, step) in build.steps.enumerated() {
-            let time = step.targetTimeSeconds ?? -1
-            let villagers = step.targetVillagers ?? -1
-            lines.append("    xsArraySetInt(trainerStepTimes, \(index), \(time));")
-            lines.append("    xsArraySetInt(trainerStepVillagers, \(index), \(villagers));")
-            if let allocation = step.allocation {
-                lines.append("    xsArraySetInt(trainerStepFood, \(index), \(allocation.food));")
-                lines.append("    xsArraySetInt(trainerStepWood, \(index), \(allocation.wood));")
-                lines.append("    xsArraySetInt(trainerStepGold, \(index), \(allocation.gold));")
-                lines.append("    xsArraySetInt(trainerStepStone, \(index), \(allocation.stone));")
+        var techGoalIndex = 0
+        for (index, entry) in steps.enumerated() {
+            let step = entry.step
+            setInt("trainerStepBuilds", index, entry.buildIndex)
+            setInt("trainerStepTimes", index, step.targetTimeSeconds ?? -1)
+            setInt("trainerStepVillagers", index, step.targetVillagers ?? -1)
+            setInt("trainerStepFood", index, step.allocation?.food ?? -1)
+            setInt("trainerStepWood", index, step.allocation?.wood ?? -1)
+            setInt("trainerStepGold", index, step.allocation?.gold ?? -1)
+            setInt("trainerStepStone", index, step.allocation?.stone ?? -1)
+            if step.includeOnly != nil {
+                lines.append("    xsArraySetBool(trainerStepUsesIncludeOnly, \(index), true);")
             }
-            // Keep in-game instruction lines compact for limited panel width.
-            let title = String(step.action.prefix(80))
-            lines.append("    xsArraySetString(trainerStepLabels, \(index), \"\(escape(title))\");")
+            // Instruction panels are narrow; the complete source remains in JSON.
+            setString("trainerStepLabels", index, String(step.action.prefix(120)))
+            setInt("trainerStepUnitStarts", index, unitGoalIndex)
+            setInt("trainerStepUnitCounts", index, step.unitGoals?.count ?? 0)
             for goal in step.unitGoals ?? [] {
-                lines.append("    xsArraySetInt(trainerUnitGoalSteps, \(unitGoalIndex), \(index));")
-                lines.append("    xsArraySetInt(trainerUnitGoalObjects, \(unitGoalIndex), \(goal.objectId));")
-                lines.append("    xsArraySetInt(trainerUnitGoalCounts, \(unitGoalIndex), \(goal.count));")
-                lines.append("    xsArraySetString(trainerUnitGoalLabels, \(unitGoalIndex), \"\(escape(goal.label))\");")
+                setInt("trainerUnitGoalObjects", unitGoalIndex, goal.objectId)
+                setInt("trainerUnitGoalCounts", unitGoalIndex, goal.count)
+                setString("trainerUnitGoalLabels", unitGoalIndex, goal.label)
                 unitGoalIndex += 1
+            }
+            setInt("trainerStepTechStarts", index, techGoalIndex)
+            setInt("trainerStepTechCounts", index, step.technologyGoals?.count ?? 0)
+            for goal in step.technologyGoals ?? [] {
+                setInt("trainerTechGoalIDs", techGoalIndex, goal.technologyId)
+                setString("trainerTechGoalLabels", techGoalIndex, goal.label)
+                techGoalIndex += 1
             }
         }
 
-        return template.replacingOccurrences(of: "// @PLAN_SETUP@", with: lines.joined(separator: "\n"))
+        return template.replacingOccurrences(of: "// @CATALOG_SETUP@", with: lines.joined(separator: "\n"))
     }
 
     static func recommendedFileName(for build: BuildOrder) -> String {

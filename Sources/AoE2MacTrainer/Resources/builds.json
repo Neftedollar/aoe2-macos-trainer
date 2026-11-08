@@ -1,170 +1,1482 @@
-[
-  {
-    "id": "arabia-scouts",
-    "name": "Scouts — базовое открытие",
-    "civilizations": ["Франки", "Мадьяры", "Берберы", "Гунны"],
-    "map": "Аравия",
-    "strategy": "Scouts → Knights",
-    "description": "Учебная последовательность. Тайминги уточняются по эталонному реплею.",
-    "steps": [
-      { "action": "Закажи крестьянина в ТЦ, три стартовых — на овец", "targetVillagers": 3, "targetTimeSeconds": 0, "allocation": { "food": 3, "wood": 0, "gold": 0, "stone": 0 } },
-      { "action": "Доведи число крестьян на овцах до шести", "targetVillagers": 6, "targetTimeSeconds": 75, "allocation": { "food": 6, "wood": 0, "gold": 0, "stone": 0 } },
-      { "action": "Построй дом и отправь на дерево", "targetVillagers": 7, "targetTimeSeconds": 100, "allocation": { "food": 6, "wood": 1, "gold": 0, "stone": 0 } },
-      { "action": "Заманивай первого кабана", "targetVillagers": 10, "targetTimeSeconds": 175, "note": "Следи за непрерывным производством крестьян." },
-      { "action": "Построй мельницу у ягод", "targetVillagers": 13, "targetTimeSeconds": 250 },
-      { "action": "Второй кабан и дополнительные фермы", "targetVillagers": 17, "targetTimeSeconds": 350 },
-      { "action": "Подготовь бараки и переход в Феодал", "targetVillagers": 20, "targetTimeSeconds": 430, "note": "Числа ориентировочные, адаптируй к бонусам цивилизации." },
-      { "action": "Построй конюшню, исследуй топор", "targetTimeSeconds": 580, "unitGoals": [{ "objectId": 101, "count": 1, "label": "Stable" }], "note": "Счётчик проверяет наличие конюшни, но не улучшение топора." },
-      { "action": "Начни давление скаутами", "targetTimeSeconds": 690, "unitGoals": [{ "objectId": 448, "count": 2, "label": "Scouts" }], "note": "Число включает стартового скаута, если тот жив." }
-    ]
-  },
-  {
-    "id": "arabia-archers",
-    "name": "Archers — базовое открытие",
-    "civilizations": ["Бритты", "Эфиопы", "Майя", "Вьетнамцы"],
-    "map": "Аравия",
-    "strategy": "Archers → Crossbows",
-    "description": "Учебный шаблон, не оптимизированный для конкретного патча.",
-    "steps": [
-      { "action": "Три стартовых крестьянина на овец; запусти очередь ТЦ", "targetVillagers": 3, "targetTimeSeconds": 0 },
-      { "action": "Доведи число крестьян на овцах до шести", "targetVillagers": 6, "targetTimeSeconds": 75 },
-      { "action": "Добавь лесорубов и построй лесопилку", "targetVillagers": 10, "targetTimeSeconds": 175 },
-      { "action": "Заманивай кабана, развивай пищевую экономику", "targetVillagers": 13, "targetTimeSeconds": 250 },
-      { "action": "Построй бараки перед переходом в Феодал", "targetVillagers": 21, "targetTimeSeconds": 450 },
-      { "action": "Стрельбище и кузница; поставь крестьян на золото", "targetTimeSeconds": 600, "unitGoals": [{ "objectId": 87, "count": 1, "label": "Range" }] },
-      { "action": "Давление лучниками; готовь арбалеты", "targetTimeSeconds": 760, "unitGoals": [{ "objectId": 4, "count": 2, "label": "Archers" }] }
-    ]
-  },
-  {
-    "id": "arena-fast-castle",
-    "name": "Fast Castle — базовый",
-    "civilizations": ["Любая"],
-    "map": "Арена",
-    "strategy": "Fast Castle → Boom",
-    "description": "Упражнение в экономике и быстром развитии.",
-    "steps": [
-      { "action": "Три стартовых крестьянина на овец; закажи нового", "targetVillagers": 3, "targetTimeSeconds": 0 },
-      { "action": "Шесть крестьян на овцах", "targetVillagers": 6, "targetTimeSeconds": 75 },
-      { "action": "Разведай базу и пополняй запасы дерева", "targetVillagers": 12, "targetTimeSeconds": 230 },
-      { "action": "Кабаны, ягоды и фермы", "targetVillagers": 18, "targetTimeSeconds": 380 },
-      { "action": "Подготовь переход в Феодал", "targetVillagers": 25, "targetTimeSeconds": 560 },
-      { "action": "Кузница и рынок, затем переход в Замки", "targetTimeSeconds": 800, "note": "Учитывай бонусы своей цивилизации." },
-      { "action": "После перехода: два новых ТЦ или военная агрессия", "targetTimeSeconds": 1000, "note": "Решение зависит от разведки и стратегии соперника." }
-    ]
-  },
-  {
-    "id": "portuguese-arena-fast-castle",
-    "name": "Portuguese — Fast Castle",
-    "civilizations": ["Португальцы"],
-    "map": "Арена",
-    "strategy": "Fast Castle → Boom",
-    "description": "Персональный тренировочный шаблон для знакомой цивилизации.",
-    "steps": [
-      { "action": "Три стартовых крестьянина на овец; запусти производство", "targetVillagers": 3, "targetTimeSeconds": 0 },
-      { "action": "Шесть крестьян на овцах", "targetVillagers": 6, "targetTimeSeconds": 75 },
-      { "action": "Лесопилка и стабильная добыча дерева", "targetVillagers": 12, "targetTimeSeconds": 230 },
-      { "action": "Сбалансируй еду для перехода в Феодал", "targetVillagers": 24, "targetTimeSeconds": 540 },
-      { "action": "Кузница, рынок и заказ Замковой эпохи", "targetTimeSeconds": 790 },
-      { "action": "Добавь ТЦ, фермы и следи за простоем", "targetTimeSeconds": 990, "note": "Включай военное производство до того, как отстанешь от соперника." }
-    ]
-  },
-  {
-    "id": "spanish-arena-castle-drop",
-    "name": "Spanish — Castle Drop",
-    "civilizations": ["Испанцы"],
-    "map": "Арена",
-    "strategy": "Fast Castle → Castle Drop",
-    "description": "Шаблон для тренировки распределения крестьян перед замком.",
-    "steps": [
-      { "action": "Начни с трёх крестьян и без простоя ТЦ", "targetVillagers": 3, "targetTimeSeconds": 0 },
-      { "action": "Шесть крестьян на овцах", "targetVillagers": 6, "targetTimeSeconds": 75 },
-      { "action": "Распредели экономику между пищей, деревом и камнем", "targetVillagers": 15, "targetTimeSeconds": 300 },
-      { "action": "Подготовь экономику для Феодала", "targetVillagers": 25, "targetTimeSeconds": 560 },
-      { "action": "Закажи Замковую эпоху и набери камень на замок", "targetTimeSeconds": 800 },
-      { "action": "Разведай позицию и подготовь строителей", "targetTimeSeconds": 970 },
-      { "action": "Поставь замок и начинай производство конкистадоров", "targetTimeSeconds": 1070, "note": "Это упражнение, а не гарантия безопасного castle drop." }
-    ]
-  },
-  {
-    "id": "armenian-georgian-arena-fc",
-    "name": "Armenians / Georgians — Fast Castle",
-    "civilizations": ["Армяне", "Грузины"],
-    "map": "Арена",
-    "strategy": "Fast Castle → Boom",
-    "description": "Общий тренировочный план; для обеих цивилизаций учитывай механику мула. Тайминги учебные.",
-    "steps": [
-      { "action": "Три крестьянина на еде, очередь в ТЦ", "targetTimeSeconds": 0, "targetVillagers": 3 },
-      { "action": "Шесть крестьян на еде", "targetTimeSeconds": 75, "targetVillagers": 6, "allocation": { "food": 6, "wood": 0, "gold": 0, "stone": 0 } },
-      { "action": "Найди дерево; поставь мула вместо лесопилки", "targetTimeSeconds": 235, "targetVillagers": 12, "note": "Проверка мула автоматикой не выполняется." },
-      { "action": "Подготовь кабанов, ягоды и фермы", "targetTimeSeconds": 390, "targetVillagers": 18 },
-      { "action": "Сбалансируй еду и золото для Замковой эпохи", "targetTimeSeconds": 565, "targetVillagers": 25 },
-      { "action": "Рынок и кузница для заказа Замковой эпохи", "targetTimeSeconds": 800, "unitGoals": [{ "objectId": 84, "count": 1, "label": "Market" }, { "objectId": 103, "count": 1, "label": "Smith" }] },
-      { "action": "Добавь второй ТЦ и продолжай производство", "targetTimeSeconds": 1050, "unitGoals": [{ "objectId": 109, "count": 2, "label": "TC" }] }
-    ]
-  },
-  {
-    "id": "arabia-fast-castle-knights",
-    "name": "Arabia — Fast Castle Knights",
-    "civilizations": ["Франки", "Берберы", "Мадьяры", "Гунны"],
-    "map": "Аравия",
-    "strategy": "Fast Castle → Knights",
-    "description": "Уязвимо к раннему давлению; тренируй с ИИ и адаптируй к разведке.",
-    "steps": [
-      { "action": "Три крестьянина на овец", "targetTimeSeconds": 0, "targetVillagers": 3 },
-      { "action": "Шесть на еде", "targetTimeSeconds": 75, "targetVillagers": 6, "allocation": { "food": 6, "wood": 0, "gold": 0, "stone": 0 } },
-      { "action": "Первые лесорубы, кабан и ягоды", "targetTimeSeconds": 245, "targetVillagers": 13 },
-      { "action": "Закажи Феодальную эпоху", "targetTimeSeconds": 520, "targetVillagers": 24 },
-      { "action": "Рынок и кузница, затем Замковая эпоха", "targetTimeSeconds": 745, "unitGoals": [{ "objectId": 84, "count": 1, "label": "Market" }, { "objectId": 103, "count": 1, "label": "Smith" }] },
-      { "action": "Конюшня, золотодобыча, первые рыцари", "targetTimeSeconds": 970, "unitGoals": [{ "objectId": 101, "count": 1, "label": "Stable" }], "note": "Не игнорируй разведку и оборону." }
-    ]
-  },
-  {
-    "id": "arena-fc-monk-siege",
-    "name": "Arena — Fast Castle Monks",
-    "civilizations": ["Азтеки", "Бирманцы", "Литовцы"],
-    "map": "Арена",
-    "strategy": "Fast Castle → Monks + Siege",
-    "description": "Упражнение для контроля перехода и первых монастырей; цели на осаду позже.",
-    "steps": [
-      { "action": "Три крестьянина на еду", "targetTimeSeconds": 0, "targetVillagers": 3 },
-      { "action": "Шесть на еде", "targetTimeSeconds": 75, "targetVillagers": 6 },
-      { "action": "Разведай карту, добавь лесорубов", "targetTimeSeconds": 270, "targetVillagers": 15 },
-      { "action": "Подготовь переход в Феодал", "targetTimeSeconds": 550, "targetVillagers": 25 },
-      { "action": "Рынок и кузница; закажи Замковую эпоху", "targetTimeSeconds": 790, "unitGoals": [{ "objectId": 84, "count": 1, "label": "Market" }, { "objectId": 103, "count": 1, "label": "Smith" }] },
-      { "action": "Построй монастырь и начни тренировать монахов", "targetTimeSeconds": 1000, "unitGoals": [{ "objectId": 104, "count": 1, "label": "Monastery" }] }
-    ]
-  },
-  {
-    "id": "arena-fast-imperial",
-    "name": "Arena — Fast Imperial",
-    "civilizations": ["Турки", "Итальянцы", "Португальцы"],
-    "map": "Арена",
-    "strategy": "Fast Imperial → Power Spike",
-    "description": "Учебный план на экономический рывок; целевые времена не являются оптимизированным билдом.",
-    "steps": [
-      { "action": "Стартовая еда и непрерывный ТЦ", "targetTimeSeconds": 0, "targetVillagers": 3 },
-      { "action": "Шесть на еде", "targetTimeSeconds": 75, "targetVillagers": 6 },
-      { "action": "Подготовь дерево, кабанов и ягоды", "targetTimeSeconds": 270, "targetVillagers": 15 },
-      { "action": "Собирай еду для Феодальной эпохи", "targetTimeSeconds": 560, "targetVillagers": 25 },
-      { "action": "Рынок и кузница для Замковой эпохи", "targetTimeSeconds": 800, "unitGoals": [{ "objectId": 84, "count": 1, "label": "Market" }, { "objectId": 103, "count": 1, "label": "Smith" }] },
-      { "action": "Готовь 1000 еды и 800 золота для Империи", "targetTimeSeconds": 1050, "note": "Пока ручная цель: точные запасы ресурсов как цель в XS не подключены." },
-      { "action": "Закажи Имперскую эпоху и готовь войска", "targetTimeSeconds": 1200, "note": "Сверь тайминг с фактическим возрастом после проверки игрового XS." }
-    ]
-  },
-  {
-    "id": "amazon-tunnel-fc-boom",
-    "name": "Amazon Tunnel — Fast Castle Boom",
-    "civilizations": ["Португальцы", "Испанцы", "Тевтоны", "Славяне"],
-    "map": "Amazon Tunnel",
-    "strategy": "Fast Castle → 3 TC Boom",
-    "description": "Для тренировки в закрытых командных играх; для генерации мода выбери исходный RMS-файл.",
-    "steps": [
-      { "action": "Сразу производи крестьян и разведи сбор еды", "targetTimeSeconds": 0, "targetVillagers": 3 },
-      { "action": "Шесть крестьян на еде", "targetTimeSeconds": 75, "targetVillagers": 6 },
-      { "action": "Разведка тоннеля, дерево и еда", "targetTimeSeconds": 285, "targetVillagers": 16 },
-      { "action": "Подготовь Феодал и экономику на золоте", "targetTimeSeconds": 590, "targetVillagers": 26 },
-      { "action": "Рынок и кузница, заказ Замковой эпохи", "targetTimeSeconds": 820, "unitGoals": [{ "objectId": 84, "count": 1, "label": "Market" }, { "objectId": 103, "count": 1, "label": "Smith" }] },
-      { "action": "Строй три ТЦ и масштабируй фермы", "targetTimeSeconds": 1170, "unitGoals": [{ "objectId": 109, "count": 3, "label": "TC" }] }
-    ]
-  }
-]
+{
+  "schemaVersion": 2,
+  "civilizations": [
+    {
+      "id": "britons",
+      "name": "Бритты",
+      "xsID": 1
+    },
+    {
+      "id": "franks",
+      "name": "Франки",
+      "xsID": 2
+    },
+    {
+      "id": "goths",
+      "name": "Готы",
+      "xsID": 3
+    },
+    {
+      "id": "teutons",
+      "name": "Тевтоны",
+      "xsID": 4
+    },
+    {
+      "id": "japanese",
+      "name": "Японцы",
+      "xsID": 5
+    },
+    {
+      "id": "byzantines",
+      "name": "Византийцы",
+      "xsID": 7
+    },
+    {
+      "id": "saracens",
+      "name": "Сарацины",
+      "xsID": 9
+    },
+    {
+      "id": "turks",
+      "name": "Турки",
+      "xsID": 10
+    },
+    {
+      "id": "vikings",
+      "name": "Викинги",
+      "xsID": 11
+    },
+    {
+      "id": "mongols",
+      "name": "Монголы",
+      "xsID": 12
+    },
+    {
+      "id": "celts",
+      "name": "Кельты",
+      "xsID": 13
+    },
+    {
+      "id": "spanish",
+      "name": "Испанцы",
+      "xsID": 14
+    },
+    {
+      "id": "aztecs",
+      "name": "Ацтеки",
+      "xsID": 15
+    },
+    {
+      "id": "huns",
+      "name": "Гунны",
+      "xsID": 17
+    },
+    {
+      "id": "koreans",
+      "name": "Корейцы",
+      "xsID": 18
+    },
+    {
+      "id": "italians",
+      "name": "Итальянцы",
+      "xsID": 19
+    },
+    {
+      "id": "magyars",
+      "name": "Мадьяры",
+      "xsID": 22
+    },
+    {
+      "id": "slavs",
+      "name": "Славяне",
+      "xsID": 23
+    },
+    {
+      "id": "portuguese",
+      "name": "Португальцы",
+      "xsID": 24
+    },
+    {
+      "id": "ethiopians",
+      "name": "Эфиопы",
+      "xsID": 25
+    },
+    {
+      "id": "malians",
+      "name": "Малийцы",
+      "xsID": 26
+    },
+    {
+      "id": "berbers",
+      "name": "Берберы",
+      "xsID": 27
+    },
+    {
+      "id": "burmese",
+      "name": "Бирманцы",
+      "xsID": 30
+    },
+    {
+      "id": "vietnamese",
+      "name": "Вьетнамцы",
+      "xsID": 31
+    },
+    {
+      "id": "armenians",
+      "name": "Армяне",
+      "xsID": 44
+    },
+    {
+      "id": "georgians",
+      "name": "Грузины",
+      "xsID": 45
+    },
+    {
+      "id": "khitans",
+      "name": "Кидани",
+      "xsID": 53
+    }
+  ],
+  "builds": [
+    {
+      "id": "arabia-scouts",
+      "name": "Скауты — 21 population / 20 крестьян",
+      "civilizations": [
+        "franks",
+        "mongols",
+        "berbers",
+        "magyars",
+        "huns",
+        "burmese",
+        "portuguese",
+        "spanish",
+        "byzantines",
+        "slavs"
+      ],
+      "map": "Аравия",
+      "mapScriptFile": "Arabia.rms",
+      "strategy": "Fast Feudal → Scouts",
+      "planStatus": "source-adapted",
+      "description": "Классическое, не самое быстрое открытие. 20 живых крестьян + стартовый скаут = 21 population; 3 стартовых крестьянина, Loom перед переходом, без обязательного подгона оленей. 9:40 — идеальный Феодал из AOEBuilds; остальные секунды — учебные контрольные точки, не результаты реплея. Бонусы могут позволить более ранний билд.",
+      "sources": [
+        {
+          "title": "Morley Games — Scout Rush, original guide",
+          "url": "https://www.youtube.com/watch?v=tyQXpGVRaCc"
+        },
+        {
+          "title": "Jupe / AOEBuilds — Scout Rush Pop 21",
+          "url": "https://www.aoebuilds.com/build-orders/main-build-orders/beginner/scout-rush-pop-21"
+        },
+        {
+          "title": "SiegeEngineers — current civilization descriptions",
+          "url": "https://github.com/SiegeEngineers/aoe2techtree/blob/master/data/locales/en/strings.json"
+        }
+      ],
+      "steps": [
+        {
+          "action": "Запусти очередь ТЦ и построй стартовые дома",
+          "targetTimeSeconds": 0,
+          "exclude": [
+            "huns"
+          ],
+          "note": "Ручное действие. Не жди заполнения лимита населения."
+        },
+        {
+          "action": "Запусти очередь ТЦ; дома гуннам не нужны",
+          "targetTimeSeconds": 0,
+          "includeOnly": [
+            "huns"
+          ],
+          "note": "У гуннов иной стартовый запас дерева; не расходуй его по шаблону домов."
+        },
+        {
+          "action": "Шесть крестьян собирают еду",
+          "targetTimeSeconds": 75,
+          "targetVillagers": 6,
+          "allocation": {
+            "food": 6,
+            "wood": 0,
+            "gold": 0,
+            "stone": 0
+          }
+        },
+        {
+          "action": "Три лесоруба и лесопилка; затем первый кабан",
+          "targetTimeSeconds": 150,
+          "targetVillagers": 9,
+          "allocation": {
+            "food": 6,
+            "wood": 3,
+            "gold": 0,
+            "stone": 0
+          }
+        },
+        {
+          "action": "Ягоды, второй кабан и непрерывная очередь ТЦ",
+          "targetTimeSeconds": 300,
+          "targetVillagers": 15,
+          "note": "Четыре на ягодах; следующий кабан приходит до исчерпания первого. Это инструкция, а не проверка конкретного кабана."
+        },
+        {
+          "action": "20 крестьян; исследуй Loom и накопи 500 еды",
+          "targetTimeSeconds": 425,
+          "targetVillagers": 20
+        },
+        {
+          "action": "Нажми Феодальную эпоху; переведи четырёх с еды на дерево",
+          "targetTimeSeconds": 450,
+          "note": "Ручная команда. Нажатие не равно завершённому переходу."
+        },
+        {
+          "action": "Подготовь бараки к Феодалу",
+          "targetTimeSeconds": 565,
+          "unitGoals": [
+            {
+              "objectId": 12,
+              "count": 1,
+              "label": "Бараки"
+            }
+          ],
+          "note": "Количество объектов не гарантирует, что строительство закончено."
+        },
+        {
+          "action": "Достигни Феодальной эпохи",
+          "targetTimeSeconds": 580,
+          "technologyGoals": [
+            {
+              "technologyId": 101,
+              "label": "Феодальная эпоха"
+            }
+          ],
+          "note": "Источник: идеальный ориентир 9:40; хороший учебный результат — до 9:55."
+        },
+        {
+          "action": "Построй конюшню и возобнови выпуск крестьян",
+          "targetTimeSeconds": 650,
+          "unitGoals": [
+            {
+              "objectId": 101,
+              "count": 1,
+              "label": "Конюшня"
+            }
+          ],
+          "note": "Учебный срок; начинай стройку сразу после перехода."
+        },
+        {
+          "action": "Исследуй Double-Bit Axe по запасу ресурсов",
+          "targetTimeSeconds": 650,
+          "exclude": [
+            "burmese"
+          ],
+          "note": "Не автоматическая проверка исследования."
+        },
+        {
+          "action": "Исследуй Horse Collar перед массовыми фермами",
+          "targetTimeSeconds": 650,
+          "exclude": [
+            "franks"
+          ],
+          "note": "У франков технологии мельницы бесплатны."
+        },
+        {
+          "action": "При избытке дерева построй кузницу и исследуй Forging",
+          "targetTimeSeconds": 740,
+          "exclude": [
+            "magyars"
+          ],
+          "note": "Опциональное ручное действие: кузница требует 150 дерева. Не останавливай ради него ТЦ и скаутов. У мадьяр Forging бесплатен."
+        },
+        {
+          "action": "Собери четыре живых скаута и начни давление",
+          "targetTimeSeconds": 780,
+          "unitGoals": [
+            {
+              "objectId": 448,
+              "count": 4,
+              "label": "Скауты"
+            }
+          ],
+          "note": "Учебная цель включает стартового скаута, если он жив. Потери могут потребовать дополнительного производства."
+        }
+      ]
+    },
+    {
+      "id": "arabia-archers",
+      "name": "Лучники — два стрельбища, 23 population",
+      "civilizations": [
+        "britons",
+        "ethiopians",
+        "aztecs",
+        "japanese",
+        "vietnamese",
+        "portuguese",
+        "byzantines",
+        "koreans"
+      ],
+      "map": "Аравия",
+      "mapScriptFile": "Arabia.rms",
+      "strategy": "Fast Feudal → Archers",
+      "planStatus": "source-adapted",
+      "description": "Общий учебный вариант по Morley: 22 крестьянина + разведчик, затем два стрельбища. Более быстрые цивилизационные варианты сюда не подмешаны. Стандартный старт из 3 крестьян, Loom; олени не обязательны. 10:30 — расчётная граница непрерывной работы ТЦ, не заявленный автором рекорд; поздние сроки — тренировочные.",
+      "sources": [
+        {
+          "title": "Morley Games — Archer Rush, original guide",
+          "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=2360858029"
+        },
+        {
+          "title": "SiegeEngineers — extracted game data (unit and technology IDs)",
+          "url": "https://github.com/SiegeEngineers/aoe2techtree/blob/master/data/data.json"
+        }
+      ],
+      "steps": [
+        {
+          "action": "Дома, очередь ТЦ; шесть крестьян на еде",
+          "targetTimeSeconds": 75,
+          "targetVillagers": 6,
+          "allocation": {
+            "food": 6,
+            "wood": 0,
+            "gold": 0,
+            "stone": 0
+          }
+        },
+        {
+          "action": "Четыре лесоруба; далее кабан и ягоды",
+          "targetTimeSeconds": 175,
+          "targetVillagers": 10,
+          "allocation": {
+            "food": 6,
+            "wood": 4,
+            "gold": 0,
+            "stone": 0
+          }
+        },
+        {
+          "action": "Организуй ягоды и второго кабана",
+          "targetTimeSeconds": 300,
+          "targetVillagers": 15
+        },
+        {
+          "action": "Дойди до 22 крестьян, закончи тёмную эпоху дополнительными лесорубами",
+          "targetTimeSeconds": 475,
+          "targetVillagers": 22
+        },
+        {
+          "action": "После Loom нажми Феодал; три с еды на золото, один на дерево",
+          "targetTimeSeconds": 500,
+          "note": "500 еды на переход. Начало исследования подтверждается вручную, не счётчиком эпохи."
+        },
+        {
+          "action": "Поставь бараки и подготовь дерево на два стрельбища",
+          "targetTimeSeconds": 610,
+          "unitGoals": [
+            {
+              "objectId": 12,
+              "count": 1,
+              "label": "Бараки"
+            }
+          ]
+        },
+        {
+          "action": "Достигни Феодала",
+          "targetTimeSeconds": 630,
+          "technologyGoals": [
+            {
+              "technologyId": 101,
+              "label": "Феодальная эпоха"
+            }
+          ],
+          "note": "Расчёт: 19 новых крестьян × 25 с + Loom 25 с + переход 130 с."
+        },
+        {
+          "action": "Два стрельбища; по возможности Double-Bit Axe",
+          "targetTimeSeconds": 710,
+          "unitGoals": [
+            {
+              "objectId": 87,
+              "count": 2,
+              "label": "Стрельбища"
+            }
+          ],
+          "note": "Учебный срок стройки. Само улучшение лесорубов здесь не проверяется."
+        },
+        {
+          "action": "Направь следующих четырёх–пятерых крестьян на золото",
+          "targetTimeSeconds": 760,
+          "note": "Ориентир — 7–8 золотодобытчиков; сохраняй производство еды для ТЦ."
+        },
+        {
+          "action": "Кузница и Fletching перед выходом",
+          "targetTimeSeconds": 830,
+          "unitGoals": [
+            {
+              "objectId": 103,
+              "count": 1,
+              "label": "Кузница"
+            }
+          ],
+          "note": "Проверяется объект кузницы, не Fletching."
+        },
+        {
+          "action": "Шесть живых лучников для первого выхода",
+          "targetTimeSeconds": 900,
+          "unitGoals": [
+            {
+              "objectId": 4,
+              "count": 6,
+              "label": "Лучники"
+            }
+          ],
+          "note": "Учебная цель, а не обязательная атака в плохую позицию."
+        }
+      ]
+    },
+    {
+      "id": "arabia-men-at-arms-archers",
+      "name": "Ратники → лучники — раннее давление",
+      "civilizations": [
+        "japanese",
+        "aztecs",
+        "celts",
+        "ethiopians",
+        "byzantines",
+        "portuguese"
+      ],
+      "map": "Аравия",
+      "mapScriptFile": "Arabia.rms",
+      "strategy": "Men-at-Arms → Archers",
+      "planStatus": "source-adapted",
+      "description": "Консервативный 23-pop вариант по Morley: 22 крестьянина, Loom, три ополченца до Феодала, затем ратники и лучники. Все секунды — рассчитанные или учебные контрольные точки; не мета-билд под последний патч. Стандартный старт, без обязательных оленей. Продолжение после первой атаки зависит от цивилизации.",
+      "sources": [
+        {
+          "title": "Morley Games — Men-at-Arms into Archers",
+          "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=2360858025"
+        },
+        {
+          "title": "SiegeEngineers — extracted game data (unit and technology IDs)",
+          "url": "https://github.com/SiegeEngineers/aoe2techtree/blob/master/data/data.json"
+        }
+      ],
+      "steps": [
+        {
+          "action": "Шесть на еде, очередь ТЦ и дома",
+          "targetTimeSeconds": 75,
+          "targetVillagers": 6
+        },
+        {
+          "action": "Четыре на дерево; кабаны и ягоды",
+          "targetTimeSeconds": 175,
+          "targetVillagers": 10
+        },
+        {
+          "action": "Продолжай пищевую экономику; подготовь дерево на бараки",
+          "targetTimeSeconds": 350,
+          "targetVillagers": 17
+        },
+        {
+          "action": "Построй бараки; последние двое перед переходом — на золото",
+          "targetTimeSeconds": 475,
+          "targetVillagers": 22,
+          "unitGoals": [
+            {
+              "objectId": 12,
+              "count": 1,
+              "label": "Бараки"
+            }
+          ]
+        },
+        {
+          "action": "Loom, затем Феодал; начни выпуск трёх ополченцев",
+          "targetTimeSeconds": 500,
+          "note": "На каждого нужны отдельные ресурсы; три ополченца не входят в targetVillagers."
+        },
+        {
+          "action": "Подготовь трёх ополченцев; усили дерево после нажатия эпохи",
+          "targetTimeSeconds": 610,
+          "unitGoals": [
+            {
+              "objectId": 74,
+              "count": 3,
+              "label": "Ополченцы"
+            }
+          ],
+          "note": "Учебный срок. Позднее улучшение меняет ID юнита; цель фиксируется при первом достижении."
+        },
+        {
+          "action": "Феодал; исследуй Men-at-Arms и дави отрядом",
+          "targetTimeSeconds": 630,
+          "technologyGoals": [
+            {
+              "technologyId": 101,
+              "label": "Феодальная эпоха"
+            }
+          ],
+          "note": "Завершение эпохи проверяется; команду улучшения пока выполняешь сам."
+        },
+        {
+          "action": "Добавь два стрельбища и добычу золота",
+          "targetTimeSeconds": 760,
+          "unitGoals": [
+            {
+              "objectId": 87,
+              "count": 2,
+              "label": "Стрельбища"
+            }
+          ]
+        },
+        {
+          "action": "Кузница, Fletching и устойчивый выпуск лучников",
+          "targetTimeSeconds": 850,
+          "unitGoals": [
+            {
+              "objectId": 103,
+              "count": 1,
+              "label": "Кузница"
+            }
+          ]
+        },
+        {
+          "action": "Собери шесть живых лучников для продолжения",
+          "targetTimeSeconds": 960,
+          "unitGoals": [
+            {
+              "objectId": 4,
+              "count": 6,
+              "label": "Лучники"
+            }
+          ],
+          "note": "Учебный срок; не подменяет решение об отступлении или смене состава."
+        }
+      ]
+    },
+    {
+      "id": "arena-fast-castle",
+      "name": "Fast Castle → три ТЦ — 27+2 population",
+      "civilizations": [
+        "britons",
+        "franks",
+        "goths",
+        "teutons",
+        "japanese",
+        "byzantines",
+        "saracens",
+        "turks",
+        "vikings",
+        "mongols",
+        "celts",
+        "spanish",
+        "aztecs",
+        "huns",
+        "koreans",
+        "magyars",
+        "slavs",
+        "portuguese",
+        "ethiopians",
+        "malians",
+        "berbers",
+        "burmese",
+        "vietnamese"
+      ],
+      "map": "Арена",
+      "mapScriptFile": "Arena.rms",
+      "strategy": "Fast Castle → Boom",
+      "planStatus": "source-adapted",
+      "description": "Общий закрытый старт: 26 крестьян при нажатии Феодала, ещё 2 в Феодале. 3 стартовых крестьянина, Loom, без обязательного подгона оленей. Замки 15:40 — идеальный ориентир AOEBuilds, до 16:00 — учебная цель. Промежуточные секунды рассчитаны для обычного ТЦ. Не обещает безопасность на открытой Аравии и не распространяется автоматически на особые старты.",
+      "sources": [
+        {
+          "title": "Morley Games — Fast Castle Boom",
+          "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=2360858024"
+        },
+        {
+          "title": "Jupe / AOEBuilds — Fast Castle Boom",
+          "url": "https://www.aoebuilds.com/build-orders/main-build-orders/beginner/fast-castle-boom-beginner"
+        },
+        {
+          "title": "SiegeEngineers — extracted game data (unit and technology IDs)",
+          "url": "https://github.com/SiegeEngineers/aoe2techtree/blob/master/data/data.json"
+        }
+      ],
+      "steps": [
+        {
+          "action": "Очередь ТЦ и стартовые дома",
+          "targetTimeSeconds": 0,
+          "exclude": [
+            "huns"
+          ]
+        },
+        {
+          "action": "Очередь ТЦ без домов",
+          "targetTimeSeconds": 0,
+          "includeOnly": [
+            "huns"
+          ]
+        },
+        {
+          "action": "Шесть крестьян на еде",
+          "targetTimeSeconds": 75,
+          "targetVillagers": 6,
+          "allocation": {
+            "food": 6,
+            "wood": 0,
+            "gold": 0,
+            "stone": 0
+          }
+        },
+        {
+          "action": "Четыре лесоруба; затем кабан и ягоды",
+          "targetTimeSeconds": 175,
+          "targetVillagers": 10,
+          "allocation": {
+            "food": 6,
+            "wood": 4,
+            "gold": 0,
+            "stone": 0
+          }
+        },
+        {
+          "action": "Продолжай пищевую экономику, заманивай второго кабана",
+          "targetTimeSeconds": 375,
+          "targetVillagers": 18
+        },
+        {
+          "action": "Добавь пятерых лесорубов; последние трое — на золото",
+          "targetTimeSeconds": 575,
+          "targetVillagers": 26,
+          "note": "Каркас источника, а не требование точно такой же добычи при каждом бонусе."
+        },
+        {
+          "action": "После Loom нажми Феодал",
+          "targetTimeSeconds": 600,
+          "note": "Ручное действие при 500 еды."
+        },
+        {
+          "action": "Достигни Феодальной эпохи",
+          "targetTimeSeconds": 730,
+          "technologyGoals": [
+            {
+              "technologyId": 101,
+              "label": "Феодальная эпоха"
+            }
+          ]
+        },
+        {
+          "action": "Рынок и кузница; создай ещё двух крестьян",
+          "targetTimeSeconds": 780,
+          "targetVillagers": 28,
+          "unitGoals": [
+            {
+              "objectId": 84,
+              "count": 1,
+              "label": "Рынок"
+            },
+            {
+              "objectId": 103,
+              "count": 1,
+              "label": "Кузница"
+            }
+          ],
+          "note": "Двое строят рынок, один кузницу. Дождись окончания строительства."
+        },
+        {
+          "action": "Закажи Замковую эпоху; копи дерево и сохрани 200 камня",
+          "targetTimeSeconds": 780,
+          "note": "Ручное нажатие при 800 еды и 200 золота. Не продавай камень, если нужен немедленный бум."
+        },
+        {
+          "action": "Достигни Замковой эпохи",
+          "targetTimeSeconds": 940,
+          "technologyGoals": [
+            {
+              "technologyId": 102,
+              "label": "Замковая эпоха"
+            }
+          ],
+          "note": "15:40 — идеал источника; задержка показывает отклонение, а не проигрыш матча."
+        },
+        {
+          "action": "Разверни три ТЦ и поддерживай их едой",
+          "targetTimeSeconds": 1080,
+          "unitGoals": [
+            {
+              "objectId": 109,
+              "count": 3,
+              "label": "Городские центры"
+            }
+          ],
+          "note": "18:00 — наш учебный срок. Счётчик объектов не гарантирует завершения стройки."
+        }
+      ]
+    },
+    {
+      "id": "arena-fast-castle-knights",
+      "name": "Fast Castle → рыцари — 28+2 population",
+      "civilizations": [
+        "franks",
+        "berbers",
+        "magyars",
+        "huns",
+        "teutons",
+        "slavs",
+        "portuguese",
+        "spanish",
+        "byzantines",
+        "burmese"
+      ],
+      "map": "Арена",
+      "mapScriptFile": "Arena.rms",
+      "strategy": "Fast Castle → Knights",
+      "planStatus": "source-adapted",
+      "description": "Закрытая карта: 27 крестьян перед Феодалом + 2 в Феодале; Loom, стандартный старт, без обязательных оленей. Идеальные Замки 16:05 подтверждены AOEBuilds; дальнейшие сроки — учебные. На открытой карте без защиты уязвимо к раннему давлению. Группы без линии рыцарей сюда не включены.",
+      "sources": [
+        {
+          "title": "Morley Games — Fast Castle into Knights",
+          "url": "https://www.youtube.com/watch?v=ivgT8n1kxgs"
+        },
+        {
+          "title": "Jupe / AOEBuilds — Fast Castle Knights",
+          "url": "https://www.aoebuilds.com/build-orders/main-build-orders/beginner/fast-castle-knights-intermediate"
+        },
+        {
+          "title": "SiegeEngineers — extracted game data (unit and technology IDs)",
+          "url": "https://github.com/SiegeEngineers/aoe2techtree/blob/master/data/data.json"
+        },
+        {
+          "title": "SiegeEngineers — current civilization descriptions",
+          "url": "https://github.com/SiegeEngineers/aoe2techtree/blob/master/data/locales/en/strings.json"
+        }
+      ],
+      "steps": [
+        {
+          "action": "Очередь ТЦ, дома и шесть на еде",
+          "targetTimeSeconds": 75,
+          "targetVillagers": 6,
+          "exclude": [
+            "huns"
+          ]
+        },
+        {
+          "action": "Очередь ТЦ и шесть на еде; домов не строить",
+          "targetTimeSeconds": 75,
+          "targetVillagers": 6,
+          "includeOnly": [
+            "huns"
+          ]
+        },
+        {
+          "action": "Четыре лесоруба; затем кабаны и ягоды",
+          "targetTimeSeconds": 175,
+          "targetVillagers": 10
+        },
+        {
+          "action": "Развивай еду и увеличивай число лесорубов",
+          "targetTimeSeconds": 375,
+          "targetVillagers": 18
+        },
+        {
+          "action": "27 крестьян; последние трое — на золото",
+          "targetTimeSeconds": 600,
+          "targetVillagers": 27
+        },
+        {
+          "action": "Loom, затем Феодал; подготовь бараки",
+          "targetTimeSeconds": 625,
+          "note": "Планируй фермы и древесину на два здания Феодала."
+        },
+        {
+          "action": "Достигни Феодальной эпохи",
+          "targetTimeSeconds": 755,
+          "technologyGoals": [
+            {
+              "technologyId": 101,
+              "label": "Феодальная эпоха"
+            }
+          ]
+        },
+        {
+          "action": "Конюшня и кузница; ещё двое крестьян на золото",
+          "targetTimeSeconds": 805,
+          "targetVillagers": 29,
+          "unitGoals": [
+            {
+              "objectId": 101,
+              "count": 1,
+              "label": "Конюшня"
+            },
+            {
+              "objectId": 103,
+              "count": 1,
+              "label": "Кузница"
+            }
+          ]
+        },
+        {
+          "action": "После завершения двух зданий нажми Замки",
+          "targetTimeSeconds": 805,
+          "note": "800 еды и 200 золота; бараки должны быть построены до конюшни."
+        },
+        {
+          "action": "Проверь ресурсы на Horse Collar",
+          "targetTimeSeconds": 900,
+          "exclude": [
+            "franks"
+          ],
+          "note": "Ручное улучшение по ситуации; у франков оно бесплатно."
+        },
+        {
+          "action": "По возможности исследуй Bloodlines",
+          "targetTimeSeconds": 900,
+          "exclude": [
+            "franks",
+            "byzantines"
+          ],
+          "note": "Не останавливай ради улучшения переход в Замки. У франков и византийцев Bloodlines отсутствует."
+        },
+        {
+          "action": "Достигни Замковой эпохи",
+          "targetTimeSeconds": 965,
+          "technologyGoals": [
+            {
+              "technologyId": 102,
+              "label": "Замковая эпоха"
+            }
+          ],
+          "note": "16:05 — идеальный ориентир, без потерь и простоя."
+        },
+        {
+          "action": "Два живых рыцаря; добавляй вторую конюшню по экономике",
+          "targetTimeSeconds": 1080,
+          "unitGoals": [
+            {
+              "objectId": 38,
+              "count": 2,
+              "label": "Рыцари"
+            }
+          ],
+          "note": "18:00 — учебная цель, не гарантированное время атаки."
+        }
+      ]
+    },
+    {
+      "id": "turks-arena-fast-imperial",
+      "name": "Турки — Fast Imperial → стрелки и пушки",
+      "civilizations": [
+        "turks"
+      ],
+      "map": "Арена",
+      "mapScriptFile": "Arena.rms",
+      "strategy": "Fast Imperial → Hand Cannoneers + Bombard Cannons",
+      "planStatus": "source-adapted",
+      "description": "Продвинутый рискованный план Morley: 28+2+2 именно КРЕСТЬЯН, не population. Закрытая карта, 3 стартовых крестьянина, Loom в этом варианте пропущен; олени помогают, но не объявлены обязательным шагом источника. 12:35 / 16:05 / 20:05 — рассчитанные границы работы одного ТЦ при достаточных ресурсах, не подтверждённый реплеем результат. При угрозе меняй план.",
+      "sources": [
+        {
+          "title": "Morley Games — Turks Fast Imperial (2020-11-13)",
+          "url": "https://www.youtube.com/watch?v=7TVgpsKBxWk"
+        },
+        {
+          "title": "Forgotten Empires — Turks",
+          "url": "https://www.forgottenempires.net/age-of-empires-ii-definitive-edition/civilizations/turks"
+        },
+        {
+          "title": "SiegeEngineers — extracted game data (unit and technology IDs)",
+          "url": "https://github.com/SiegeEngineers/aoe2techtree/blob/master/data/data.json"
+        }
+      ],
+      "steps": [
+        {
+          "action": "Очередь ТЦ и дома; шесть на еде",
+          "targetTimeSeconds": 75,
+          "targetVillagers": 6
+        },
+        {
+          "action": "Четыре на дерево; кабан, ягоды и второй кабан",
+          "targetTimeSeconds": 175,
+          "targetVillagers": 10
+        },
+        {
+          "action": "Усиль дерево, затем пищевую экономику",
+          "targetTimeSeconds": 400,
+          "targetVillagers": 19
+        },
+        {
+          "action": "28 крестьян, четыре на золоте; нажми Феодал без Loom",
+          "targetTimeSeconds": 625,
+          "targetVillagers": 28,
+          "note": "Пропуск Loom опасен вне защищённой базы. Если исследовал его — все дальнейшие идеальные сроки минимум на 25 с позже."
+        },
+        {
+          "action": "Достигни Феодала",
+          "targetTimeSeconds": 755,
+          "technologyGoals": [
+            {
+              "technologyId": 101,
+              "label": "Феодальная эпоха"
+            }
+          ],
+          "note": "12:35 — расчёт, не замер."
+        },
+        {
+          "action": "Рынок, кузница и ещё двое крестьян на золото; нажми Замки",
+          "targetTimeSeconds": 805,
+          "targetVillagers": 30,
+          "unitGoals": [
+            {
+              "objectId": 84,
+              "count": 1,
+              "label": "Рынок"
+            },
+            {
+              "objectId": 103,
+              "count": 1,
+              "label": "Кузница"
+            }
+          ]
+        },
+        {
+          "action": "Достигни Замковой эпохи",
+          "targetTimeSeconds": 965,
+          "technologyGoals": [
+            {
+              "technologyId": 102,
+              "label": "Замковая эпоха"
+            }
+          ]
+        },
+        {
+          "action": "Ещё двое на золото; монастырь и осадная мастерская",
+          "targetTimeSeconds": 1015,
+          "targetVillagers": 32,
+          "unitGoals": [
+            {
+              "objectId": 104,
+              "count": 1,
+              "label": "Монастырь"
+            },
+            {
+              "objectId": 49,
+              "count": 1,
+              "label": "Осадная мастерская"
+            }
+          ],
+          "note": "Строить параллельно; в этом плане дальнейший выпуск крестьян временно ограничен ради ресурсов."
+        },
+        {
+          "action": "Нажми Империал; используй рынок только по необходимости",
+          "targetTimeSeconds": 1015,
+          "note": "1000 еды и 800 золота. Учти потери от обмена и не считай запасы равными добыче."
+        },
+        {
+          "action": "Построй бараки, затем два стрельбища к завершению перехода",
+          "targetTimeSeconds": 1190,
+          "unitGoals": [
+            {
+              "objectId": 12,
+              "count": 1,
+              "label": "Бараки"
+            },
+            {
+              "objectId": 87,
+              "count": 2,
+              "label": "Стрельбища"
+            }
+          ]
+        },
+        {
+          "action": "Империал и бесплатная Chemistry; запускай стрелков и пушки",
+          "targetTimeSeconds": 1205,
+          "technologyGoals": [
+            {
+              "technologyId": 103,
+              "label": "Имперская эпоха"
+            },
+            {
+              "technologyId": 47,
+              "label": "Химия"
+            }
+          ],
+          "note": "Проверяется получение технологий, а не ручное исследование Chemistry: туркам оно не нужно."
+        },
+        {
+          "action": "Первая пушка и четыре ручных канонира",
+          "targetTimeSeconds": 1380,
+          "unitGoals": [
+            {
+              "objectId": 36,
+              "count": 1,
+              "label": "Бомбарда"
+            },
+            {
+              "objectId": 5,
+              "count": 4,
+              "label": "Ручные канониры"
+            }
+          ],
+          "note": "23:00 — учебный, не авторский срок. Защити осаду и возобнови экономику."
+        }
+      ]
+    },
+    {
+      "id": "arena-gunpowder-practice",
+      "name": "Империал → порох — общий учебный план",
+      "civilizations": [
+        "turks",
+        "portuguese",
+        "italians",
+        "spanish"
+      ],
+      "map": "Арена",
+      "mapScriptFile": "Arena.rms",
+      "strategy": "Practice Fast Imperial → Gunpowder",
+      "planStatus": "practice-targets",
+      "description": "Не универсальный оптимизированный Fast Imperial. Это редактируемая тренировка переходов для четырёх цивилизаций: стандартный старт, Loom, 32+2+2 крестьянина и запас времени на ресурсы. Все секунды — наши учебные цели. Турецкий скоростной вариант вынесен отдельно. Chemistry пропускается только в списке ручных действий турок; итальянские цены учитываются отдельной подсказкой.",
+      "sources": [
+        {
+          "title": "Morley Games — Fast Castle Boom",
+          "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=2360858024"
+        },
+        {
+          "title": "Forgotten Empires — Turks",
+          "url": "https://www.forgottenempires.net/age-of-empires-ii-definitive-edition/civilizations/turks"
+        },
+        {
+          "title": "Forgotten Empires — Italians",
+          "url": "https://www.forgottenempires.net/age-of-empires-ii-definitive-edition/civilizations/italians"
+        },
+        {
+          "title": "SiegeEngineers — extracted game data (unit and technology IDs)",
+          "url": "https://github.com/SiegeEngineers/aoe2techtree/blob/master/data/data.json"
+        }
+      ],
+      "steps": [
+        {
+          "action": "Запусти ТЦ, дома и базовую пищевую экономику",
+          "targetTimeSeconds": 75,
+          "targetVillagers": 6
+        },
+        {
+          "action": "Кабаны и ягоды; обеспечь непрерывный выпуск",
+          "targetTimeSeconds": 350,
+          "targetVillagers": 17
+        },
+        {
+          "action": "32 крестьянина; сбалансируй еду, дерево и золото",
+          "targetTimeSeconds": 780,
+          "targetVillagers": 32,
+          "note": "Учебный ориентир. Не трать всё дерево: понадобятся рынок, кузница и здания Замковой эпохи."
+        },
+        {
+          "action": "Loom и переход в Феодал",
+          "targetTimeSeconds": 780,
+          "exclude": [
+            "italians"
+          ],
+          "note": "500 еды на эпоху; это ручная команда."
+        },
+        {
+          "action": "Loom и переход в Феодал по итальянской цене",
+          "targetTimeSeconds": 780,
+          "includeOnly": [
+            "italians"
+          ],
+          "note": "425 еды вместо 500. Скидка не сокращает длительность исследования эпохи."
+        },
+        {
+          "action": "Феодал; рынок, кузница и ещё двое крестьян",
+          "targetTimeSeconds": 900,
+          "technologyGoals": [
+            {
+              "technologyId": 101,
+              "label": "Феодальная эпоха"
+            }
+          ]
+        },
+        {
+          "action": "Подготовь Замки",
+          "targetTimeSeconds": 960,
+          "targetVillagers": 34,
+          "exclude": [
+            "italians"
+          ],
+          "unitGoals": [
+            {
+              "objectId": 84,
+              "count": 1,
+              "label": "Рынок"
+            },
+            {
+              "objectId": 103,
+              "count": 1,
+              "label": "Кузница"
+            }
+          ],
+          "note": "800 еды и 200 золота."
+        },
+        {
+          "action": "Подготовь Замки по итальянской цене",
+          "targetTimeSeconds": 960,
+          "targetVillagers": 34,
+          "includeOnly": [
+            "italians"
+          ],
+          "unitGoals": [
+            {
+              "objectId": 84,
+              "count": 1,
+              "label": "Рынок"
+            },
+            {
+              "objectId": 103,
+              "count": 1,
+              "label": "Кузница"
+            }
+          ],
+          "note": "680 еды и 170 золота."
+        },
+        {
+          "action": "Достигни Замков; ещё двое крестьян и подготовка двух зданий",
+          "targetTimeSeconds": 1140,
+          "technologyGoals": [
+            {
+              "technologyId": 102,
+              "label": "Замковая эпоха"
+            }
+          ]
+        },
+        {
+          "action": "Монастырь и осадная мастерская; 36 крестьян",
+          "targetTimeSeconds": 1260,
+          "targetVillagers": 36,
+          "unitGoals": [
+            {
+              "objectId": 104,
+              "count": 1,
+              "label": "Монастырь"
+            },
+            {
+              "objectId": 49,
+              "count": 1,
+              "label": "Осадная мастерская"
+            }
+          ]
+        },
+        {
+          "action": "Накопи ресурсы и нажми Империал",
+          "targetTimeSeconds": 1310,
+          "exclude": [
+            "italians"
+          ],
+          "note": "1000 еды и 800 золота. 25:00 — учебный срок завершения, не оптимум этой цивилизации."
+        },
+        {
+          "action": "Нажми Империал по итальянской цене",
+          "targetTimeSeconds": 1310,
+          "includeOnly": [
+            "italians"
+          ],
+          "note": "850 еды и 680 золота; те же 190 секунд исследования."
+        },
+        {
+          "action": "Подготовь университет, бараки и два стрельбища",
+          "targetTimeSeconds": 1490,
+          "exclude": [
+            "turks"
+          ],
+          "unitGoals": [
+            {
+              "objectId": 209,
+              "count": 1,
+              "label": "Университет"
+            },
+            {
+              "objectId": 87,
+              "count": 2,
+              "label": "Стрельбища"
+            }
+          ],
+          "note": "Университет нужен для Chemistry; законченные бараки — для строительства стрельбищ."
+        },
+        {
+          "action": "Подготовь бараки и два стрельбища",
+          "targetTimeSeconds": 1490,
+          "includeOnly": [
+            "turks"
+          ],
+          "unitGoals": [
+            {
+              "objectId": 87,
+              "count": 2,
+              "label": "Стрельбища"
+            }
+          ],
+          "note": "Университет ради Chemistry туркам не нужен; бараки для стрельбищ обязательны."
+        },
+        {
+          "action": "Достигни Империала",
+          "targetTimeSeconds": 1500,
+          "technologyGoals": [
+            {
+              "technologyId": 103,
+              "label": "Имперская эпоха"
+            }
+          ]
+        },
+        {
+          "action": "Исследуй Chemistry для пороховой армии",
+          "targetTimeSeconds": 1610,
+          "exclude": [
+            "turks"
+          ],
+          "technologyGoals": [
+            {
+              "technologyId": 47,
+              "label": "Химия"
+            }
+          ],
+          "note": "Срок завершения: базовое исследование 100 с, 300 еды + 200 золота. Не трать весь запас на эпоху."
+        },
+        {
+          "action": "Первая бомбарда и четыре ручных канонира",
+          "targetTimeSeconds": 1740,
+          "unitGoals": [
+            {
+              "objectId": 36,
+              "count": 1,
+              "label": "Бомбарда"
+            },
+            {
+              "objectId": 5,
+              "count": 4,
+              "label": "Ручные канониры"
+            }
+          ],
+          "note": "29:00 — учебный контроль. Состав и продолжение корректируются по сопернику."
+        }
+      ]
+    },
+    {
+      "id": "khitans-scouts-pastures",
+      "name": "Кидани — скауты и пастбища",
+      "civilizations": [
+        "khitans"
+      ],
+      "map": "Аравия",
+      "mapScriptFile": "Arabia.rms",
+      "strategy": "Scouts → Pasture economy",
+      "planStatus": "practice-targets",
+      "description": "Учебная адаптация классических скаутов под подтверждённые механики киданей, не проверенный профессиональный билд. 20 крестьян + разведчик, Loom, без обязательных оленей; все сроки тренировочные. Пастбища заменяют фермы. Не предлагаются рыцари и Bloodlines. Mounted Trebuchet — верблюжья осада поздней игры, а не цель первых десяти минут.",
+      "sources": [
+        {
+          "title": "Morley Games — Scout Rush, original guide",
+          "url": "https://www.youtube.com/watch?v=tyQXpGVRaCc"
+        },
+        {
+          "title": "Age of Empires — Khitans, official civilization overview",
+          "url": "https://www.ageofempires.com/games/aoeiide/civilizations/khitan/"
+        },
+        {
+          "title": "Age of Empires II: DE — Update 162286 (2025-12-02)",
+          "url": "https://www.ageofempires.com/news/age-of-empires-ii-definitive-edition-update-162286/"
+        },
+        {
+          "title": "SiegeEngineers — extracted game data (unit and technology IDs)",
+          "url": "https://github.com/SiegeEngineers/aoe2techtree/blob/master/data/data.json"
+        }
+      ],
+      "steps": [
+        {
+          "action": "Дома, очередь ТЦ и шесть на еде",
+          "targetTimeSeconds": 75,
+          "targetVillagers": 6
+        },
+        {
+          "action": "Три на дерево; далее кабан и ягоды",
+          "targetTimeSeconds": 150,
+          "targetVillagers": 9
+        },
+        {
+          "action": "Сохрани пищевую экономику и выпуск крестьян",
+          "targetTimeSeconds": 325,
+          "targetVillagers": 15
+        },
+        {
+          "action": "20 крестьян; Loom и подготовка Феодала",
+          "targetTimeSeconds": 450,
+          "targetVillagers": 20
+        },
+        {
+          "action": "Нажми Феодал, усили дерево и построй бараки",
+          "targetTimeSeconds": 490,
+          "note": "Учебный запас относительно обычных 21-pop скаутов; не норматив для текущего патча."
+        },
+        {
+          "action": "Достигни Феодальной эпохи",
+          "targetTimeSeconds": 620,
+          "technologyGoals": [
+            {
+              "technologyId": 101,
+              "label": "Феодальная эпоха"
+            }
+          ]
+        },
+        {
+          "action": "Конюшня и выпуск скаутов",
+          "targetTimeSeconds": 700,
+          "unitGoals": [
+            {
+              "objectId": 101,
+              "count": 1,
+              "label": "Конюшня"
+            }
+          ]
+        },
+        {
+          "action": "Построй мельницу на ягодах; далее заменяй исчерпавшийся корм пастбищами",
+          "targetTimeSeconds": 760,
+          "note": "Мельница — условие строительства пастбищ. Пастбище стоит 110 дерева по патчу 162286; планируй по два крестьянина. Это инструкция: XS здесь не проверяет конкретные пары."
+        },
+        {
+          "action": "Собери четыре живых скаута",
+          "targetTimeSeconds": 840,
+          "unitGoals": [
+            {
+              "objectId": 448,
+              "count": 4,
+              "label": "Скауты"
+            }
+          ],
+          "note": "Включая стартового, если он жив. Не заказывай отсутствующий Bloodlines."
+        },
+        {
+          "action": "Оцени экономику перед Замками",
+          "targetTimeSeconds": 960,
+          "note": "Возможное продолжение — степные всадники или конные лучники, не линия рыцарей. Верблюжью осаду добавляй позже отдельным планом."
+        }
+      ]
+    },
+    {
+      "id": "armenian-georgian-arena-fc",
+      "name": "Армяне / грузины — Fast Castle с повозками",
+      "civilizations": [
+        "armenians",
+        "georgians"
+      ],
+      "map": "Арена",
+      "mapScriptFile": "Arena.rms",
+      "strategy": "Practice Fast Castle → Boom",
+      "planStatus": "practice-targets",
+      "description": "Общий редактируемый каркас закрытого FC с повозками вместо лесопилок и горных лагерей. Не копия оптимизированного билда: стартовые бонусы и расходы требуют отдельной калибровки. Стандартные ресурсы карты, Loom, без обязательных оленей; все времена — учебные. План про экономику; возможные военные продолжения различаются.",
+      "sources": [
+        {
+          "title": "Morley Games — Fast Castle Boom",
+          "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=2360858024"
+        },
+        {
+          "title": "SiegeEngineers — extracted game data (unit and technology IDs)",
+          "url": "https://github.com/SiegeEngineers/aoe2techtree/blob/master/data/data.json"
+        },
+        {
+          "title": "SiegeEngineers — current civilization descriptions",
+          "url": "https://github.com/SiegeEngineers/aoe2techtree/blob/master/data/locales/en/strings.json"
+        }
+      ],
+      "steps": [
+        {
+          "action": "Запусти ТЦ, дома и шесть крестьян на еде",
+          "targetTimeSeconds": 90,
+          "targetVillagers": 6
+        },
+        {
+          "action": "Организуй дерево через повозку",
+          "targetTimeSeconds": 210,
+          "targetVillagers": 10,
+          "note": "Используй доступную стартовую повозку или создай дополнительную по необходимости. Не строй отсутствующую лесопилку."
+        },
+        {
+          "action": "Кабаны, ягоды и непрерывный выпуск крестьян",
+          "targetTimeSeconds": 420,
+          "targetVillagers": 18
+        },
+        {
+          "action": "26 крестьян; подготовь золото и Loom",
+          "targetTimeSeconds": 620,
+          "targetVillagers": 26,
+          "note": "Для золота нужна повозка; не копируй расходы на обычный горный лагерь."
+        },
+        {
+          "action": "Нажми Феодальную эпоху",
+          "targetTimeSeconds": 650,
+          "note": "Учебный ориентир, не идеальный тайминг источника."
+        },
+        {
+          "action": "Достигни Феодала",
+          "targetTimeSeconds": 800,
+          "technologyGoals": [
+            {
+              "technologyId": 101,
+              "label": "Феодальная эпоха"
+            }
+          ]
+        },
+        {
+          "action": "Рынок и кузница; ещё два крестьянина",
+          "targetTimeSeconds": 870,
+          "targetVillagers": 28,
+          "unitGoals": [
+            {
+              "objectId": 84,
+              "count": 1,
+              "label": "Рынок"
+            },
+            {
+              "objectId": 103,
+              "count": 1,
+              "label": "Кузница"
+            }
+          ]
+        },
+        {
+          "action": "Нажми Замки и приготовь дерево на расширение",
+          "targetTimeSeconds": 880,
+          "note": "Для этого учебного бума сохрани 200 камня."
+        },
+        {
+          "action": "Достигни Замковой эпохи",
+          "targetTimeSeconds": 1050,
+          "technologyGoals": [
+            {
+              "technologyId": 102,
+              "label": "Замковая эпоха"
+            }
+          ]
+        },
+        {
+          "action": "Разверни три ТЦ",
+          "targetTimeSeconds": 1200,
+          "unitGoals": [
+            {
+              "objectId": 109,
+              "count": 3,
+              "label": "Городские центры"
+            }
+          ],
+          "note": "20:00 — учебный срок; существование объекта не гарантирует завершённой стройки."
+        },
+        {
+          "action": "Выбери армянское продолжение: пехота или монахи",
+          "targetTimeSeconds": 1230,
+          "includeOnly": [
+            "armenians"
+          ],
+          "note": "Ручная развилка, не автоматически выполненная военная цель."
+        },
+        {
+          "action": "При необходимости перейди в грузинскую кавалерию",
+          "targetTimeSeconds": 1230,
+          "includeOnly": [
+            "georgians"
+          ],
+          "note": "Не обязательный расход для чистого бума; зависит от разведки."
+        }
+      ]
+    }
+  ]
+}

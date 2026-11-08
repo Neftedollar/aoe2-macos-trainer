@@ -9,6 +9,19 @@ struct ResourceAllocation: Codable, Equatable {
     var isValid: Bool { [food, wood, gold, stone].allSatisfy { $0 >= 0 } }
 }
 
+struct BuildSource: Codable, Equatable {
+    let title: String
+    let url: String
+
+    var isValid: Bool {
+        guard !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              let components = URLComponents(string: url),
+              ["https", "http"].contains(components.scheme?.lowercased() ?? ""),
+              let host = components.host, !host.isEmpty else { return false }
+        return true
+    }
+}
+
 /// A minimum number of currently owned objects of a specific AoE2 object ID.
 /// Buildings and units share the same IDs in the XS API.
 struct UnitGoal: Codable, Equatable {
@@ -19,6 +32,17 @@ struct UnitGoal: Codable, Equatable {
     var isValid: Bool { objectId > 0 && count > 0 && !label.isEmpty }
 }
 
+/// A completed technology, including age advancement. Queued/researching is
+/// deliberately not treated as completed by the XS trainer.
+struct TechnologyGoal: Codable, Equatable {
+    let technologyId: Int
+    let label: String
+
+    var isValid: Bool {
+        technologyId > 0 && !label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+}
+
 struct BuildStep: Codable, Equatable {
     let action: String
     let targetVillagers: Int?
@@ -26,6 +50,11 @@ struct BuildStep: Codable, Equatable {
     let allocation: ResourceAllocation?
     let note: String?
     let unitGoals: [UnitGoal]?
+    /// Optional allowlist, further restricted by `exclude`. Values are canonical
+    /// civilization IDs, never localized labels in a validated v2 document.
+    let includeOnly: [String]?
+    let exclude: [String]?
+    let technologyGoals: [TechnologyGoal]?
 
     init(
         action: String,
@@ -33,7 +62,10 @@ struct BuildStep: Codable, Equatable {
         targetTimeSeconds: Int? = nil,
         allocation: ResourceAllocation? = nil,
         note: String? = nil,
-        unitGoals: [UnitGoal]? = nil
+        unitGoals: [UnitGoal]? = nil,
+        includeOnly: [String]? = nil,
+        exclude: [String]? = nil,
+        technologyGoals: [TechnologyGoal]? = nil
     ) {
         self.action = action
         self.targetVillagers = targetVillagers
@@ -41,14 +73,33 @@ struct BuildStep: Codable, Equatable {
         self.allocation = allocation
         self.note = note
         self.unitGoals = unitGoals
+        self.includeOnly = includeOnly?.map { CivilizationCatalog.resolve($0)?.id ?? $0 }
+        self.exclude = exclude?.map { CivilizationCatalog.resolve($0)?.id ?? $0 }
+        self.technologyGoals = technologyGoals
+    }
+
+    func applies(to civilizationID: String) -> Bool {
+        guard let canonical = CivilizationCatalog.resolve(civilizationID)?.id else { return false }
+        return (includeOnly?.contains(canonical) ?? true) && !(exclude?.contains(canonical) ?? false)
+    }
+
+    /// Conditions have already been evaluated for this specialized copy.
+    fileprivate var unconditional: BuildStep {
+        BuildStep(action: action, targetVillagers: targetVillagers,
+                  targetTimeSeconds: targetTimeSeconds, allocation: allocation,
+                  note: note, unitGoals: unitGoals, technologyGoals: technologyGoals)
     }
 
     var isValid: Bool {
-        !action.isEmpty && (targetVillagers ?? 0) >= 0 && (targetTimeSeconds ?? 0) >= 0 &&
+        !action.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+            (targetVillagers ?? 0) >= 0 && (targetTimeSeconds ?? 0) >= 0 &&
             (allocation?.isValid ?? true) &&
             (unitGoals?.count ?? 0) <= 8 &&
             (unitGoals?.allSatisfy(\.isValid) ?? true) &&
-            Set((unitGoals ?? []).map(\.objectId)).count == (unitGoals?.count ?? 0)
+            Set((unitGoals ?? []).map(\.objectId)).count == (unitGoals?.count ?? 0) &&
+            (technologyGoals?.count ?? 0) <= 8 &&
+            (technologyGoals?.allSatisfy(\.isValid) ?? true) &&
+            Set((technologyGoals ?? []).map(\.technologyId)).count == (technologyGoals?.count ?? 0)
     }
 }
 
@@ -62,37 +113,52 @@ struct BuildOrder: Codable, Identifiable, Equatable {
     let strategy: String
     let description: String
     let steps: [BuildStep]
+    let sources: [BuildSource]?
+    let planStatus: String?
 
     // Legacy property retained for existing UI call sites and integrations.
-    var civilization: String { civilizations.joined(separator: ", ") }
+    var civilization: String {
+        civilizations.map { CivilizationCatalog.resolve($0)?.name ?? $0 }.joined(separator: ", ")
+    }
 
     init(id: String, name: String, civilizations: [String], map: String,
-         mapScriptFile: String? = nil, strategy: String, description: String, steps: [BuildStep]) {
+         mapScriptFile: String? = nil, strategy: String, description: String, steps: [BuildStep],
+         sources: [BuildSource]? = nil, planStatus: String? = nil) {
         self.id = id
         self.name = name
-        self.civilizations = civilizations
+        self.civilizations = civilizations.map { CivilizationCatalog.resolve($0)?.id ?? $0 }
         self.map = map
         self.mapScriptFile = mapScriptFile
         self.strategy = strategy
         self.description = description
         self.steps = steps
+        self.sources = sources
+        self.planStatus = planStatus
     }
 
     init(id: String, name: String, civilization: String, map: String,
-         strategy: String, description: String, steps: [BuildStep]) {
-        self.init(id: id, name: name, civilizations: [civilization], map: map,
-                  strategy: strategy, description: description, steps: steps)
+         mapScriptFile: String? = nil, strategy: String, description: String, steps: [BuildStep],
+         sources: [BuildSource]? = nil, planStatus: String? = nil) {
+        // Older call sites may pass the legacy comma-separated display label.
+        let names = civilization.split(separator: ",", omittingEmptySubsequences: false)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        self.init(id: id, name: name, civilizations: names, map: map,
+                  mapScriptFile: mapScriptFile, strategy: strategy, description: description,
+                  steps: steps, sources: sources, planStatus: planStatus)
     }
 
     enum CodingKeys: String, CodingKey {
         case id, name, civilizations, civilization, map, mapScriptFile, strategy, description, steps
+        case sources, planStatus
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(String.self, forKey: .id)
         name = try c.decode(String.self, forKey: .name)
-        if let names = try c.decodeIfPresent([String].self, forKey: .civilizations) {
+        if decoder.userInfo[.strictBuildLibraryV2] as? Bool == true {
+            civilizations = try c.decode([String].self, forKey: .civilizations)
+        } else if let names = try c.decodeIfPresent([String].self, forKey: .civilizations) {
             civilizations = names
         } else if let names = try? c.decode([String].self, forKey: .civilization) {
             civilizations = names
@@ -104,6 +170,8 @@ struct BuildOrder: Codable, Identifiable, Equatable {
         strategy = try c.decode(String.self, forKey: .strategy)
         description = try c.decode(String.self, forKey: .description)
         steps = try c.decode([BuildStep].self, forKey: .steps)
+        sources = try c.decodeIfPresent([BuildSource].self, forKey: .sources)
+        planStatus = try c.decodeIfPresent(String.self, forKey: .planStatus)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -116,23 +184,119 @@ struct BuildOrder: Codable, Identifiable, Equatable {
         try c.encode(strategy, forKey: .strategy)
         try c.encode(description, forKey: .description)
         try c.encode(steps, forKey: .steps)
+        try c.encodeIfPresent(sources, forKey: .sources)
+        try c.encodeIfPresent(planStatus, forKey: .planStatus)
+    }
+
+    func supports(civilizationID: String) -> Bool {
+        guard let canonical = CivilizationCatalog.resolve(civilizationID)?.id else { return false }
+        return civilizations.contains(canonical)
+    }
+
+    /// Resolve from the ORIGINAL catalog on every civilization change. The
+    /// result is a specialized plan, not another multi-civilization template.
+    func resolved(for civilizationID: String) -> BuildOrder? {
+        guard let canonical = CivilizationCatalog.resolve(civilizationID)?.id,
+              supports(civilizationID: canonical) else { return nil }
+        let activeSteps = steps.filter { $0.applies(to: canonical) }.map(\.unconditional)
+        guard !activeSteps.isEmpty else { return nil }
+        return BuildOrder(id: id, name: name, civilizations: [canonical], map: map,
+                          mapScriptFile: mapScriptFile, strategy: strategy, description: description,
+                          steps: activeSteps, sources: sources, planStatus: planStatus)
     }
 
     var hasValidGoalsAndTimeline: Bool {
-        guard !name.isEmpty, !civilizations.isEmpty,
-              civilizations.allSatisfy({ !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }),
-              !map.isEmpty,
-              mapScriptFile.map({ !($0.contains("/") || $0.contains("\\") || $0.contains("\n") || $0.contains("\r") || $0.contains("\"")) && $0.lowercased().hasSuffix(".rms") }) ?? true,
-              !steps.isEmpty, steps.count <= 200, steps.allSatisfy(\.isValid) else { return false }
-        var lastDeadline = -1
-        for step in steps {
-            if let time = step.targetTimeSeconds {
-                if time < lastDeadline { return false }
-                lastDeadline = time
+        validationIssue(declaredCivilizations: Set(CivilizationCatalog.standard.map(\.id))) == nil
+    }
+
+    fileprivate func validationIssue(declaredCivilizations: Set<String>) -> String? {
+        let context = "Билд «\(id)»"
+        guard !id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              !map.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              !strategy.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return "\(context): id, name, map и strategy не могут быть пустыми."
+        }
+        if let file = mapScriptFile,
+           !(file.lowercased().hasSuffix(".rms") && file.allSatisfy({
+               $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "_" || $0 == "-" || $0 == ".")
+           })) {
+            return "\(context): mapScriptFile должен быть именем файла .rms без пути, пробелов и кавычек."
+        }
+        guard !civilizations.isEmpty else { return "\(context): civilizations не может быть пустым." }
+        guard Set(civilizations).count == civilizations.count else {
+            return "\(context): в civilizations повторяется одна и та же цивилизация."
+        }
+        for civilization in civilizations {
+            guard CivilizationCatalog.resolve(civilization)?.id == civilization else {
+                return "\(context): неизвестный канонический ID цивилизации «\(civilization)»."
+            }
+            guard declaredCivilizations.contains(civilization) else {
+                return "\(context): цивилизация «\(civilization)» не объявлена в civilizations документа."
             }
         }
-        return true
+        guard !steps.isEmpty, steps.count <= 200 else {
+            return "\(context): нужно от 1 до 200 шагов."
+        }
+        let allowed = Set(civilizations)
+        for (index, step) in steps.enumerated() {
+            let stepContext = "\(context), шаг \(index + 1)"
+            guard step.isValid else {
+                return "\(stepContext): проверь текст действия, неотрицательные цели, уникальные objectId/technologyId (не более 8 unitGoals и 8 technologyGoals)."
+            }
+            if let include = step.includeOnly, include.isEmpty {
+                return "\(stepContext): includeOnly не может быть пустым; убери поле для общего шага."
+            }
+            for (field, references) in [("includeOnly", step.includeOnly), ("exclude", step.exclude)] {
+                guard let references else { continue }
+                guard Set(references).count == references.count else {
+                    return "\(stepContext): поле \(field) содержит повторяющиеся цивилизации."
+                }
+                for reference in references {
+                    guard CivilizationCatalog.resolve(reference)?.id == reference else {
+                        return "\(stepContext): неизвестный канонический ID «\(reference)» в \(field)."
+                    }
+                    guard allowed.contains(reference) else {
+                        return "\(stepContext): «\(reference)» из \(field) не объявлена в civilizations этого билда."
+                    }
+                }
+            }
+        }
+        // Mutually exclusive variants may have different deadlines. The order
+        // must be chronological for every plan a player can actually receive.
+        for civilization in civilizations {
+            let activeSteps = steps.filter { $0.applies(to: civilization) }
+            guard !activeSteps.isEmpty else {
+                return "\(context): после includeOnly/exclude для «\(civilization)» не осталось шагов."
+            }
+            var lastDeadline = -1
+            for step in activeSteps {
+                if let time = step.targetTimeSeconds {
+                    guard time >= lastDeadline else {
+                        return "\(context): targetTimeSeconds идут не по порядку для «\(civilization)»."
+                    }
+                    lastDeadline = time
+                }
+            }
+        }
+        if sources?.contains(where: { !$0.isValid }) == true {
+            return "\(context): у каждого sources нужны непустой title и корректный http(s) URL."
+        }
+        if let status = planStatus, status.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return "\(context): planStatus не может быть пустой строкой."
+        }
+        return nil
     }
+}
+
+struct BuildOrderDocument: Codable, Equatable {
+    let schemaVersion: Int
+    let civilizations: [CivilizationDefinition]
+    let builds: [BuildOrder]
+}
+
+private extension CodingUserInfoKey {
+    static let strictBuildLibraryV2 = CodingUserInfoKey(rawValue: "AoE2MacTrainer.strictBuildLibraryV2")!
 }
 
 enum BuildOrderLibrary {
@@ -143,17 +307,126 @@ enum BuildOrderLibrary {
     }
 
     static func decode(_ data: Data) throws -> [BuildOrder] {
-        let builds = try JSONDecoder().decode([BuildOrder].self, from: data)
-        guard !builds.isEmpty, builds.allSatisfy({ !$0.steps.isEmpty }) else {
-            throw LibraryError.emptyBuild
+        try decodeDocument(data).builds
+    }
+
+    /// All successful decodes return a canonical v2 document, including imports
+    /// of the original array format. Unknown references never expand to "all".
+    static func decodeDocument(_ data: Data) throws -> BuildOrderDocument {
+        try parse(data, allowEmpty: false)
+    }
+
+    static func validate(_ builds: [BuildOrder]) throws {
+        try validate(builds, declaredCivilizations: Set(CivilizationCatalog.standard.map(\.id)),
+                     allowEmpty: false)
+    }
+
+    /// Unknown/missing civilization is intentionally fail-closed. Keep the
+    /// original catalog and call this again when the observed civ changes.
+    static func eligible(_ builds: [BuildOrder], civilizationID: String?) -> [BuildOrder] {
+        guard let civilizationID,
+              let canonical = CivilizationCatalog.resolve(civilizationID)?.id else { return [] }
+        return builds.compactMap { $0.resolved(for: canonical) }
+    }
+
+    private static func parse(_ data: Data, allowEmpty: Bool) throws -> BuildOrderDocument {
+        let root = try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])
+        let decoder = JSONDecoder()
+        let document: BuildOrderDocument
+        if root is [Any] {
+            let legacy = try decoder.decode([BuildOrder].self, from: data)
+            document = BuildOrderDocument(
+                schemaVersion: 2, civilizations: CivilizationCatalog.standard,
+                builds: try legacy.map(normalizeLegacy)
+            )
+        } else if root is [String: Any] {
+            decoder.userInfo[.strictBuildLibraryV2] = true
+            document = try decoder.decode(BuildOrderDocument.self, from: data)
+            guard document.schemaVersion == 2 else {
+                throw LibraryError.invalidDocument("Неизвестная schemaVersion \(document.schemaVersion); поддерживается версия 2.")
+            }
+        } else {
+            throw LibraryError.invalidDocument("Корень JSON должен быть документом версии 2 или массивом билдов старого формата.")
         }
-        guard builds.allSatisfy(\.hasValidGoalsAndTimeline) else {
-            throw LibraryError.invalidGoal
+
+        try validateDeclarations(document.civilizations)
+        try validate(document.builds,
+                     declaredCivilizations: Set(document.civilizations.map(\.id)),
+                     allowEmpty: allowEmpty)
+        return document
+    }
+
+    private static func validateDeclarations(_ declarations: [CivilizationDefinition]) throws {
+        guard !declarations.isEmpty else {
+            throw LibraryError.invalidDocument("В начале документа должен быть непустой список civilizations.")
         }
-        guard Set(builds.map(\.id)).count == builds.count else {
-            throw LibraryError.duplicateID
+        var ids = Set<String>()
+        var engineIDs = Set<Int>()
+        for civilization in declarations {
+            guard ids.insert(civilization.id).inserted else {
+                throw LibraryError.invalidDocument("Цивилизация «\(civilization.id)» объявлена повторно.")
+            }
+            guard engineIDs.insert(civilization.xsID).inserted else {
+                throw LibraryError.invalidDocument("ID движка xsID=\(civilization.xsID) объявлен повторно.")
+            }
+            guard let known = CivilizationCatalog.resolve(civilization.id), known.id == civilization.id else {
+                throw LibraryError.invalidDocument("В civilizations объявлен неизвестный канонический ID «\(civilization.id)».")
+            }
+            guard known.xsID == civilization.xsID else {
+                throw LibraryError.invalidDocument("Для «\(civilization.id)» ожидается xsID=\(known.xsID), а указан \(civilization.xsID).")
+            }
+            guard !civilization.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                throw LibraryError.invalidDocument("У цивилизации «\(civilization.id)» отсутствует name.")
+            }
         }
-        return builds
+    }
+
+    private static func validate(_ builds: [BuildOrder], declaredCivilizations: Set<String>,
+                                 allowEmpty: Bool) throws {
+        if !allowEmpty && builds.isEmpty { throw LibraryError.emptyBuild }
+        guard Set(builds.map(\.id)).count == builds.count else { throw LibraryError.duplicateID }
+        for build in builds {
+            if let issue = build.validationIssue(declaredCivilizations: declaredCivilizations) {
+                throw LibraryError.invalidDocument(issue)
+            }
+        }
+    }
+
+    private static func legacyIDs(_ references: [String], context: String,
+                                  allowAny: Bool = false) throws -> [String] {
+        // Old singular labels could also be a comma-joined UI value.
+        let names = references.flatMap {
+            $0.split(separator: ",", omittingEmptySubsequences: false)
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        }
+        if allowAny && names.count == 1 && names[0].lowercased() == "любая" {
+            return CivilizationCatalog.standard.map(\.id)
+        }
+        return try names.map { name in
+            guard let civilization = CivilizationCatalog.resolve(name) else {
+                throw LibraryError.invalidDocument("\(context): неизвестная цивилизация «\(name)».")
+            }
+            return civilization.id
+        }
+    }
+
+    private static func normalizeLegacy(_ build: BuildOrder) throws -> BuildOrder {
+        let civilizations = try legacyIDs(build.civilizations,
+                                         context: "Билд «\(build.id)»", allowAny: true)
+        let steps = try build.steps.enumerated().map { (index, step) -> BuildStep in
+            let context = "Билд «\(build.id)», шаг \(index + 1)"
+            let include = try step.includeOnly.map { try legacyIDs($0, context: context + " includeOnly") }
+            let exclude = try step.exclude.map { try legacyIDs($0, context: context + " exclude") }
+            return BuildStep(action: step.action, targetVillagers: step.targetVillagers,
+                             targetTimeSeconds: step.targetTimeSeconds, allocation: step.allocation,
+                             note: step.note, unitGoals: step.unitGoals,
+                             includeOnly: include, exclude: exclude,
+                             technologyGoals: step.technologyGoals)
+        }
+        return BuildOrder(id: build.id, name: build.name, civilizations: civilizations,
+                          map: build.map, mapScriptFile: build.mapScriptFile,
+                          strategy: build.strategy, description: build.description,
+                          steps: steps, sources: build.sources, planStatus: build.planStatus)
     }
 
     static func bundled() -> [BuildOrder] {
@@ -180,22 +453,34 @@ enum BuildOrderLibrary {
 
     /// Custom builds override packaged IDs and can be reloaded without rebuilding the app.
     static func loadAll() throws -> [BuildOrder] {
-        let base = bundled()
-        guard FileManager.default.fileExists(atPath: customBuildsURL.path) else { return base }
-        let data = try Data(contentsOf: customBuildsURL)
-        let custom = try JSONDecoder().decode([BuildOrder].self, from: data)
-        if custom.isEmpty { return base }
-        let validated = try decode(data)
-        return merged(bundled: base, custom: validated)
+        try loadAll(customURL: customBuildsURL, bundled: bundled())
+    }
+
+    /// Explicit paths allow safe tests without touching the user's real library.
+    static func loadAll(customURL: URL, bundled base: [BuildOrder]) throws -> [BuildOrder] {
+        guard FileManager.default.fileExists(atPath: customURL.path) else { return base }
+        let data = try Data(contentsOf: customURL)
+        let document = try parse(data, allowEmpty: true)
+        return merged(bundled: base, custom: document.builds)
     }
 
     static func prepareCustomBuildsFile() throws -> URL {
-        let url = customBuildsURL
+        try prepareCustomBuildsFile(at: customBuildsURL)
+    }
+
+    static func prepareCustomBuildsFile(at url: URL) throws -> URL {
         try FileManager.default.createDirectory(
             at: url.deletingLastPathComponent(), withIntermediateDirectories: true
         )
         if !FileManager.default.fileExists(atPath: url.path) {
-            try "[]\n".write(to: url, atomically: true, encoding: .utf8)
+            let template = BuildOrderDocument(schemaVersion: 2,
+                                              civilizations: CivilizationCatalog.standard,
+                                              builds: [])
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+            var data = try encoder.encode(template)
+            data.append(0x0A)
+            try data.write(to: url, options: .atomic)
         }
         return url
     }
@@ -204,6 +489,7 @@ enum BuildOrderLibrary {
         case emptyBuild
         case duplicateID
         case invalidGoal
+        case invalidDocument(String)
 
         var errorDescription: String? {
             switch self {
@@ -213,6 +499,8 @@ enum BuildOrderLibrary {
                 return "В JSON встречаются повторяющиеся идентификаторы билдов."
             case .invalidGoal:
                 return "Некорректная цель или тайминг: проверь количества, objectId, порядок targetTimeSeconds и число шагов (максимум 200)."
+            case .invalidDocument(let message):
+                return message
             }
         }
     }

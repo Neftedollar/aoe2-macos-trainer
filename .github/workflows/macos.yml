@@ -16,7 +16,16 @@ jobs:
         run: swift --version
 
       - name: Unit tests
+        env:
+          AOE2_TRAINER_XS_OUTPUT: ${{ github.workspace }}/.build/generated/trainer_catalog.xs
         run: swift test
+
+      - name: Upload generated XS catalog for static validation
+        uses: actions/upload-artifact@v4
+        with:
+          name: Generated-XS-catalog
+          path: .build/generated/trainer_catalog.xs
+          if-no-files-found: error
 
       - name: Build macOS application
         run: bash Scripts/build-app.sh
@@ -29,3 +38,23 @@ jobs:
         with:
           name: AoE2MacTrainer-macos
           path: AoE2MacTrainer-macos.zip
+
+  xs-check:
+    name: Generated XS syntax and type check
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download generated catalog
+        uses: actions/download-artifact@v4
+        with:
+          name: Generated-XS-catalog
+          path: generated
+
+      - name: Download pinned XS Check release
+        run: |
+          curl --fail --location --retry 3 https://github.com/Divy1211/xs-check/releases/download/v0.2.32/xs-check --output xs-check
+          echo '93deca6c96503124ec349e70b4b3042d99a9ad562aaa97125f0cdb9db7789f3f  xs-check' | sha256sum --check
+          chmod +x xs-check
+
+      - name: Validate generated XS
+        run: ./xs-check generated/trainer_catalog.xs

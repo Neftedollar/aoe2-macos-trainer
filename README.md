@@ -1,32 +1,22 @@
 # AoE2 Mac Trainer
 
-A native macOS training HUD for **Age of Empires II: Definitive Edition**, designed for the official Apple Silicon edition on Steam.
+A native macOS companion and **XS training module** for Age of Empires II: Definitive Edition. Public, MIT-licensed, experimental. No OCR, screen capture, process-memory access, or automatic game orders.
 
-The goal is to help 1v1 players practice unfamiliar civilizations without leaving their match. The overlay floats over the game and lets mouse clicks pass through to AoE2.
+## What works in each part
 
-## Current status (experimental)
+| Component | Implemented behavior | Important limitation |
+| --- | --- | --- |
+| Generated XS module | Reads the actual local player's civilization and game clock; filters a complete build catalog; observes goals and rolling economy metrics; displays the current build inside the game | Requires a custom RMS/scenario that loads it; native Mac gameplay has not yet been tested |
+| macOS floating overlay | Click-through build preview, manual civilization selection, JSON reload, hotkeys, mod creation | **PREVIEW only: it is not receiving live XS telemetry**; its manual clock is an estimate |
+| JSON build catalog | Versioned declarations, civilization allowlists, conditional steps, timed goals, source metadata | A valid document is not proof that its timings are achievable in a match |
 
-- Native transparent `NSPanel` overlay (SwiftUI + AppKit)
-- Click-through window with support for macOS fullscreen Spaces
-- Menu-bar controller; no Dock icon
-- Global hotkeys for build navigation, build selection, overlay visibility and timer control
-- Ten sample builds, including Arabia Scouts/Archers, Arena Fast Castle, Portuguese FC, Spanish Castle Drop, Armenian/Georgian FC, Fast Castle Knights, FC Monks, Fast Imperial, and Amazon Tunnel Boom
-- Training timer calibrated to **1.7x** normal AoE2 game speed
-- XS script exporter that turns the selected **JSON build** into a self-contained `.xs` trainer
-- Custom JSON file in `~/Library/Application Support/AoE2MacTrainer/builds.json`, reloadable from the menu without rebuilding
-- JSON `civilizations` array permits multiple applicable civilizations for the same strategy (older `civilization` string files still load)
-- Local XS **mod packager**: creates a standalone training map mod with `.rms` and `.xs` files; auto-detects the Feral macOS profile if present and allows choosing a source `.rms` file
-- Experimental in-game XS dashboard: actual game time, build steps, villager target, four **gross resource-collected rates** per rolling 60 game seconds
-- Approximate number of workers assigned to each resource and per-worker rates, based on the villager task target / cargo
-- Time-based XS **checkpoints** with measurable targets for total villagers, workers on each resource and current units/buildings by object ID
-- Goal status in-game: due in N seconds, missed deadline, completed early/late, and missed-checkpoint count
-- XCTest unit tests and GitHub Actions macOS build
+The current library contains **9 reviewed training plans covering 27 explicitly listed civilizations**, including Scouts, Archers, Men-at-Arms → Archers, Fast Castle, Turkish Fast Imperial, and Khitan/Armenian/Georgian practice variants. The engine-ID registry covers more civilizations than the curated build library. It does **not** claim one optimized build for every civilization.
 
-**Not implemented yet:** automatically detecting civilization/map, a verified real-time link from XS to the external macOS overlay, exact TC idle time, identifying villagers on a specific boar reliably, precise per-worker assignment, and post-game replay analysis. The native overlay still uses an **estimated clock** started by hand; the XS instructions use the **actual in-game clock**. All sample build timings remain unverified training placeholders, **not competitive benchmarks**.
+Still unimplemented: a verified live XS ↔ native-app bridge, exact TC idle time, automatic map detection, reliable boar-specific worker assignment, and replay/post-match analytics. **Control+Option+B does not yet change the running game's XS selection.**
 
-## Get started
+## Build the macOS app
 
-Requires a Mac with macOS 13 or later and Xcode Command Line Tools or Xcode.
+Requires macOS 13 or later and Xcode Command Line Tools or Xcode:
 
 ```sh
 swift test
@@ -34,125 +24,175 @@ bash Scripts/build-app.sh
 open .build/AoE2MacTrainer.app
 ```
 
-The app appears as 🏰 in the macOS menu bar. Launch AoE2 DE in **Windowed/Borderless** mode if the overlay does not appear over native fullscreen. Click-through is enabled permanently; all controls are via the menu-bar icon or global hotkeys.
+The app appears as 🏰 in the menu bar. The transparent overlay passes clicks through to the game. Windowed/borderless mode may be needed if the panel does not appear over a native fullscreen Space. The overlay labels its manual preview state explicitly; selecting a preview civilization is not game detection.
 
-### XS training module (experimental)
+## Create a training mod
 
-1. Select a build using the 🏰 menu or `Ctrl+Option+B`.
-   For custom steps, choose **Открыть пользовательский JSON…**, add your build objects to the `[]` array (using `Resources/builds.json` as the schema), and choose **Перезагрузить JSON-билды**. Custom entries with the same `id` override packaged builds.
-2. For an Arena/Arabia/Nomad build, choose **Создать локальный XS-мод…**. This generates a **new** local mod containing both the XS and a custom RMS that tries to include the game's standard map. For a custom map (e.g. Amazon Tunnel), choose **Создать XS-мод из RMS-файла…** and select an existing `.rms` or `.rms2` file that you own.
-3. The app discovers macOS Feral profiles under `~/Library/Application Support/Feral Interactive/Age Of Empires II/VFS/User/Games/Age of Empires 2 DE/<steam-id>/mods/local`. If one profile is found, it writes the new mod there. Otherwise select the `mods/local` folder manually, or another export destination and move the result to the actual `mods/local` afterwards. **Only new directories are created; installed game files and previous mods are never overwritten.**
-4. Restart AoE2 after generating the mod so its custom-map list can refresh. In AoE2, open **Mods → My Mods / Installed Mods** (the label may vary by version), enable the new local mod if necessary, then start a **Custom Map** match (Skirmish) against the desired AI difficulty. Select the generated `AoE2Trainer_*` map, **not** the unmodified standard map. Once loaded, XS should display the current checkpoint, goal progress, deadlines, resource collection/minute and approximate worker distribution directly in the game. A full 60-game-second window is needed before the first rate appears.
+1. Optionally edit the custom JSON through **Открыть пользовательский JSON…** and reload it. An invalid reload reports an error and preserves the previous valid catalog.
+2. Choose the local XS-mod creation menu and select **Arena**, **Arabia**, **Nomad**, or an existing `.rms`/`.rms2` that you own. A preview build does not need to be selected. **The entire catalog is exported**, not only the desktop's current filtered list.
+3. If exactly one native Feral profile is detected, the app proposes its `mods/local` directory. Otherwise choose that directory manually, or export elsewhere and move the generated folder later. Only new mod folders are created; installed game files and previous mods are never overwritten.
+4. Restart AoE2 if needed to refresh its custom-map list. Enable the local mod, then start a custom-map Skirmish against your desired AI difficulty. Select the generated `AoE2Trainer_*` map, **not** the unmodified standard map.
+5. XS reads the actual local player and civilization. It chooses the preferred build only if that build is eligible; otherwise it uses the first eligible build. An unsupported civilization displays **NO MATCHING BUILDS**, not an unrelated plan.
 
-The wrapper RMS for built-in maps contains only:
+The native macOS profile location the app checks is:
 
 ```text
-#includeXS aoe2trainer_YOUR-BUILD.xs
+~/Library/Application Support/Feral Interactive/Age Of Empires II/VFS/User/Games/Age of Empires 2 DE/<steam-id>/mods/local
+```
+
+Each mod gets a unique XS filename so enabling two exported catalogs does not silently substitute one module for the other:
+
+```text
+AoE2Trainer_Arena/
+  info.json
+  resources/_common/random-map-scripts/AoE2Trainer_Arena.rms
+  resources/_common/xs/aoe2trainer_Arena_<instance>.xs
+```
+
+The standard-map wrapper uses:
+
+```text
+#includeXS aoe2trainer_Arena_<instance>.xs
 #include_drs Arena.rms
 ```
 
-The wrapper assumes the game exposes `Arena.rms` through its standard data-archive includes. **This exact macOS deployment and wrapper behavior has not been tested in the game.** If it fails, use the second menu option to package a copy of an existing RMS instead. Third-party RMS scripts that depend on relative custom include files may require those dependencies to be installed as well.
+**The wrapper and this deployment path have not been verified inside the native Mac game.** If the standard-map include is unavailable, package an existing RMS instead. Its custom include dependencies must also be installed. A source RMS already containing `#includeXS` is rejected because combining `main()` functions needs manual integration. Original RMS bytes are preserved apart from the prepended XS include.
 
-The generated mod layout is:
+Direct catalog export is also available as `aoe2trainer_catalog.xs`. Reference it before `<PLAYER_SETUP>` in your own RMS. The exported module is a **snapshot**: changing JSON later requires another export before a new match.
+
+### In-game selection versus desktop hotkeys
+
+The generated module contains all eligible plans and exposes these **unbound Scenario Editor Script Call entry points**:
 
 ```text
-AoE2Trainer_example/
-  info.json
-  resources/_common/random-map-scripts/AoE2Trainer_example.rms
-  resources/_common/xs/aoe2trainer_example.xs
+trainerNextBuild()
+trainerPreviousBuild()
+trainerNextStep()
+trainerPreviousStep()
+trainerResumeTimeline()
 ```
 
-The old **Экспорт XS для выбранного билда…** command is still available if you prefer manual integration into an existing RMS. The XS file must be referenced by `#includeXS` **before** `<PLAYER_SETUP>`.
+Build switching skips ineligible civilizations and preserves first-observed goal timestamps. These functions are not keyboard listeners. A scenario can bind them to its own supported triggers; the generated RMS does not yet provide an interactive selector or a live connection to the app's hotkeys. In a plain exported RMS, choose the preferred plan before export.
 
-**Important:** the native XS display is separate from the SwiftUI overlay. The macOS HUD shows the selected JSON `name` prominently and the `civilizations` list, and lets you cycle through builds via `Ctrl+Option+B`; its steps are manually controlled by hotkeys. The **exported XS module is a snapshot** of the build selected when the mod was generated. To change the live XS script's build, generate/select a different training mod before the match. The XS panel follows actual in-game time and is placed by AoE2 at its built-in **top instruction position** (about 13% from the top), not at an arbitrary pixel coordinate. Neither runtime gameplay nor script loading on macOS has been verified yet.
+The game controls the placement of `xsDisplayInstructions`; arbitrary placement immediately below the resource bar is not implemented. Its live panel and the external macOS preview are separate displays.
 
-### Timed checkpoints and JSON goals
+## JSON v2: shared plans and civilization exceptions
 
-The custom file is a **JSON array** of build definitions; the full schema is the bundled `Sources/AoE2MacTrainer/Resources/builds.json`.
+Custom definitions live at `~/Library/Application Support/AoE2MacTrainer/builds.json`. New files use the v2 envelope. The following is a **schema/practice example**, not a verified Fast Imperial opening:
 
 ```json
-[
-  {
-    "id": "my-arabia-goals",
-    "name": "My first 10 minutes",
-    "civilizations": ["Армяне", "Грузины"],
-    "map": "Аравия",
-    "mapScriptFile": "Arabia.rms",
-    "strategy": "Scouts",
-    "description": "Custom training checkpoints",
-    "steps": [
-      { "action": "6 villagers on food", "targetTimeSeconds": 75, "targetVillagers": 6,
-        "allocation": { "food": 6, "wood": 0, "gold": 0, "stone": 0 } },
-      { "action": "Reach 20 villagers and build a stable", "targetTimeSeconds": 600,
-        "targetVillagers": 20,
-        "allocation": { "food": 8, "wood": 7, "gold": 0, "stone": 0 },
-        "unitGoals": [{ "objectId": 101, "count": 1, "label": "Stable" }] }
-    ]
-  }
-]
+{
+  "schemaVersion": 2,
+  "civilizations": [
+    { "id": "turks", "name": "Турки", "xsID": 10 },
+    { "id": "portuguese", "name": "Португальцы", "xsID": 24 }
+  ],
+  "builds": [
+    {
+      "id": "my-gunpowder-practice",
+      "name": "Учебный Империал → порох",
+      "civilizations": ["turks", "portuguese"],
+      "map": "Арена",
+      "mapScriptFile": "Arena.rms",
+      "strategy": "Gunpowder practice",
+      "description": "Свободные учебные сроки, не оптимальный билд",
+      "planStatus": "practice-targets",
+      "steps": [
+        {
+          "action": "Достичь Имперской эпохи",
+          "targetTimeSeconds": 1500,
+          "technologyGoals": [{ "technologyId": 103, "label": "Империал" }]
+        },
+        {
+          "action": "Завершить Химию в университете",
+          "targetTimeSeconds": 1650,
+          "exclude": ["turks"],
+          "technologyGoals": [{ "technologyId": 47, "label": "Химия" }]
+        },
+        {
+          "action": "Химия бесплатная: готовить пороховую армию",
+          "targetTimeSeconds": 1650,
+          "includeOnly": ["turks"]
+        }
+      ]
+    }
+  ]
+}
 ```
 
-`targetTimeSeconds` is **in-game time**, e.g. `600` means 10:00. Targets are minimums, not exact worker allocations: if food target is 6, having 7 qualifies. `targetVillagers` checks currently living villagers. `unitGoals` uses AoE2 object IDs to check the **current count** of owned units/buildings (e.g. `101` stable, `87` archery range, `448` scout cavalry, `4` archer); it does not reliably prove that a building has finished construction or that a given production action was executed. Unit counts can be affected by units dying or upgrades. Object IDs can change with regional units or game modes.
+Rules:
 
-`civilizations` accepts any non-empty list of display names; the app does **not** auto-detect the current civilization yet. Legacy custom JSON with the singular `"civilization": "Португальцы"` continues to work; new JSON may also use a `"civilization"` string array, but `civilizations` is preferred. `mapScriptFile` is optional: it names a built-in `.rms` included with `#include_drs` and can be specified for a custom map if you know its exact game file name. For imported RMS files, use the dedicated menu command. The JSON must contain one or more steps ordered by `targetTimeSeconds`.
+- Root `civilizations` declares canonical IDs and their known XS IDs. Unknown IDs, incorrect XS mappings, and duplicate declarations are errors.
+- Each build has a nonempty explicit `civilizations` allowlist. It is an eligibility rule, not a label.
+- Optional step `includeOnly` and `exclude` **must be arrays**. Every referenced civilization must be declared and must belong to the parent build. `exclude` wins if both selectors match. An empty `includeOnly` is rejected.
+- Validation checks the timeline after resolving each civilization's steps, so mutually exclusive variants may have different times. Every allowed civilization must retain at least one step.
+- Unknown/no-current-civilization fails closed. Neither preview nor XS treats that as “show everything.”
+- `name` supplies the visible build title. `sources: [{"title": "...", "url": "https://..."}]` and `planStatus` preserve provenance.
+- Custom builds override bundled builds with the same `id`. A valid empty custom catalog adds no overrides. Invalid JSON does not silently fall back or partially load.
 
-The XS rule samples every **2 in-game seconds** and records the first time each measurable goal is seen as achieved. `MET EARLY` / `MET LATE` compares that observation to the deadline; `LATE` means unmet and overdue. `MISSED CHECKPOINTS` summarizes unfinished or late goals. The currently displayed step follows the timeline even if an earlier target was missed. Steps without measurable goals are labelled `MANUAL ACTION` and cannot be automatically verified.
+Older root-array documents, the singular `civilization` field, and recognized Russian/English aliases are imported for compatibility. Legacy `Любая` expands to the known registry only during legacy import; v2 requires explicit declarations/allowlists. Existing custom files are never rewritten automatically.
 
-Worker assignment is **approximate**: XS infers it from the villager's current target or carried resource. Therefore `allocation.food` means roughly “villagers working on food”, not “villagers specifically on this boar”. Accurate boar-only targets are **not implemented**. Building, queue and exact TC-idle checks also need more engine-level validation.
+### Goal semantics
 
-The XS script reads **only the local player's** cumulative resource-collected counters (`166..169`) rather than subtracting resource stockpiles: buying units does **not** reduce the measured gathering rate. These counters can also reflect resource generation from non-villager sources; worker counts are estimates based on unit targets and carried materials, and cannot distinguish every builder/returning/idle villager. **Per-worker rates are diagnostic approximations.**
-
-The script does not change the world, create units, issue commands, or inspect opponents. No screen capture, process injection, or keyboard automation is used. **The exported script requires a custom RMS/scenario that loads it.** Ordinary ranked or unmodified 4v4 maps cannot be assumed to load it. Multiplayer rules and parity on the native Mac port remain to be tested.
-
-**Why not use `.xsdat` for live streaming?** Available XS engine-testing documentation indicates that `.xsdat` writes remain buffered until a scenario ends, so the script computes and displays live metrics **inside the game**. The external app cannot honestly claim a live XS data feed yet. This experimental design leaves replay parsing out of scope.
-
-## Hotkeys
-
-| Keys | Action |
+| Field | What it means |
 | --- | --- |
-| Control + Option + N | Next build step |
-| Control + Option + P | Previous build step |
-| Control + Option + B | Next build order |
-| Control + Option + S | Start/pause estimated game clock |
-| Control + Option + R | Reset clock and step |
+| `targetTimeSeconds` | Deadline in **game seconds**, not real seconds; passing it does not complete a goal |
+| `targetVillagers` | Minimum current **living villagers**, not population or lifetime production |
+| `allocation` | Minimum approximate workers on food/wood/gold/stone; not exact assignment to a particular boar |
+| `unitGoals` | Current owned object counts by `objectId`; foundations and upgraded IDs require caution |
+| `technologyGoals` | Technology is **completed** (`xsGetTechState(id, player) == 3`), not merely queued or researching |
+
+All measurable conditions in a step must hold together. The script samples every two game seconds and remembers the first observation satisfying a step. It tracks all civilization-eligible plans, including those not currently displayed, so switching does not invent a new achievement time. Loading the script late cannot reconstruct prior events. Steps without a measurable condition remain **MANUAL ACTION**, not automatically completed instructions.
+
+Upcoming incomplete checkpoints are shown before their deadlines. Late/missed checkpoints remain in a summary; manual next/previous selects an instruction but never marks its goal complete. Goal timing has the sampling resolution of the XS rule, not frame-perfect precision.
+
+## Economy metrics
+
+The XS panel shows each resource's gross collection per minute over a rolling 60 **game-second** window, average estimated workers over that window, and approximate collection per worker. It reads cumulative collected counters (`166…169`), **not the resource stockpile**, so spending does not masquerade as lower collection. There is a warm-up before a full window is available.
+
+Worker assignment is inferred from unit targets/carried resources. Drop-off, idle/building tasks, special sources such as Khitan pastures, and non-villager income can distort it. These rates are diagnostics, not an exact “efficiency percentage.” Exact TC idle time is not inferred from missing villager growth: research, age advancement, and other TC actions must be distinguished first.
+
+## Build library and review
+
+See [the source and review notes](docs/build-library-sources.md) for all nine plans, authors, timing assumptions, and civilization exceptions. `source-adapted` identifies an adaptation of an authored guide; `practice-targets` identifies deliberately loose exercise targets. **Neither label means match-verified.**
+
+The Khitan plan accounts for pastures and the absence of Knights/Bloodlines. It is an early-game training variant, not a claimed optimized Mounted Trebuchet opening. Population, living villagers, and time spent researching at the TC are kept distinct.
+
+## Hotkeys — desktop preview only
+
+| Keys | Preview action |
+| --- | --- |
+| Control + Option + N / P | Next / previous effective build step |
+| Control + Option + B | Next build eligible for the manually selected preview civilization |
+| Control + Option + S | Start/pause estimated 1.7× clock |
+| Control + Option + R | Reset preview clock and step |
 | Control + Option + H | Show/hide overlay |
 
-**Start the clock as the match begins**. Reference timings are in AoE2 game seconds, not wall-clock seconds. macOS accessibility shortcuts may conflict with the default hotkeys; hotkey customization is planned.
+These actions never issue game commands or change the running XS plan. Accessibility/system shortcuts may conflict. A live hotkey bridge is a remaining milestone, not a completed feature.
 
-## Architecture
+## Live bridge investigation and multiplayer limits
 
-| Component | Purpose |
-| --- | --- |
-| `BuildOrder.swift` | JSON build definitions and validation |
-| `TrainingClock.swift` | Pausable estimated AoE2 game clock |
-| `TrainerState.swift` | Step navigation, selected build and UI state |
-| `OverlayView.swift` | Read-only, click-through SwiftUI HUD |
-| `OverlayController.swift` | Floating fullscreen-compatible `NSPanel` |
-| `HotkeyManager.swift` | Global Carbon hotkeys without injecting input into AoE2 |
-| `Resources/builds.json` | Starter training plans (placeholders) |
-| `XSBuildExporter.swift` | Turns a selected JSON build into standalone XS source |
-| `TrainingModPackager.swift` | Creates a local AoE2 mod with RMS + XS without overwriting game files or existing mods |
-| `Resources/trainer_template.xs` | XS rolling economy metrics and game-native instruction panel |
+Older [XSLC source](https://github.com/prelusion/XSLiveCommands) demonstrates an external file-command design using XS `.xsdat` reads. Its Mac client is unimplemented and it targets an older game version. Separately, [aoe2kit's engine-testing notes](https://github.com/chrae/aoe2kit/blob/main/docs/SIDECAR.md) report buffered XS writes. Therefore live transfer is **not proven impossible**, but neither direction is verified on the current native Mac engine. This project does not yet implement that bridge and has not copied XSLC's GPL-licensed code.
 
-## Next milestones
+Local XS file input may cause multiplayer desynchronization unless all participants have identical inputs. No multiplayer-safe or ranked/competitive use is claimed. Use explicitly loaded custom single-player training maps until runtime, synchronization, and fair-play requirements are verified. The script does not inspect opponents or alter the simulated world.
 
-1. Verify overlay placement and hotkeys against the official macOS Steam build.
-2. Validate the auto-installed local mod and `#include_drs` wrapper in a native Mac Steam custom RMS, including whether the instruction panel refreshes correctly.
-3. Validate XS total-collected counters, timed checkpoint status, unit counts and approximate worker classifications during a 1v1 against AI, including villager drop-off, farms and fishing.
-4. Improve JSON plans with validated first-ten-minute milestones; add in-game build selection / manual navigation if the game exposes a safe XS input mechanism.
-5. Research an officially supported in-game to native-app bridge; do not assume `.xsdat` supports live transfer. The engine's per-unit `cUnitActionId` may help diagnose TC state, but whether training is reflected reliably is unverified; do **not** label derived guesses as exact TC idle time.
-6. Defer replay parsing and post-game analytics until the live trainer is useful.
+## Validation and next steps
 
-Online competitive use of scripted coaching has not been verified against the game's fair-play policy. Until that is clarified, use the XS-enhanced features in explicitly supported custom single-player training maps.
+GitHub Actions builds the app on macOS, runs Swift tests, generates the **actual full-catalog XS**, and checks that artifact with the pinned [XS Check](https://github.com/Divy1211/xs-check) CLI. Grammar/type checks catch errors that string assertions do not. Neither CI nor a successful `.app` build proves the module loads in AoE2 or measures the intended state.
 
-## XS references
+Remaining acceptance checks:
 
-- [Official XS functions](https://www.forgottenempires.net/age-of-empires-ii-definitive-edition/xs-scripting-in-age-of-empires-ii-definitive-edition)
-- [Resource IDs 166–169: total collected](https://ugc.aoe2.rocks/general/resources/resources/)
-- [2026 `xsDisplayInstructions` update](https://www.ageofempires.com/news/age-of-empires-ii-definitive-edition-update-177723/)
-- [2026 `xsUnsyncGetLocalPlayerId` rename](https://www.ageofempires.com/news/age-of-empires-ii-definitive-edition-update-185872/)
-- [XS sidecar buffering limitations](https://github.com/chrae/aoe2kit/blob/main/docs/SIDECAR.md)
+1. Load the generated mod in native macOS AoE2 and verify the actual civ, title, game clock, completed-technology state and no-match behavior.
+2. Compare rolling rates and worker estimates with a controlled gathering exercise; verify gaps, restarts and age transitions.
+3. Validate in-game build/step selection and a safe external bridge, without OCR or memory access.
+4. Calibrate guide-derived and practice timelines in real training games. Defer replay/post-match features.
 
-## License
+## References and license
 
-MIT — see [LICENSE](LICENSE). Implementation is original; no code was copied from source-available, non-redistributable overlays.
+- [Official XS API](https://www.forgottenempires.net/age-of-empires-ii-definitive-edition/xs-scripting-in-age-of-empires-ii-definitive-edition)
+- [XS language guide](https://ugc.aoe2.rocks/general/xs/programmer/)
+- [XS functions](https://ugc.aoe2.rocks/general/xs/functions/functions/)
+- [Resource counters](https://ugc.aoe2.rocks/general/resources/resources/)
+- [2026 local-player API rename](https://www.ageofempires.com/news/age-of-empires-ii-definitive-edition-update-185872/)
+
+MIT — see [LICENSE](LICENSE). The implementation and concise build adaptations are original. Third-party guides, videos and linked projects retain their own licenses; their assets and full text are not bundled.

@@ -63,17 +63,37 @@ enum TrainingModPackager {
     static func install(build: BuildOrder, source: MapSource,
                         into localModsFolder: URL,
                         fileManager: FileManager = .default) throws -> URL {
-        let script = try XSBuildExporter.generate(for: build)
-        let xsFile = XSBuildExporter.recommendedFileName(for: build)
-        let mapContent = try makeMapContents(source: source, xsFilename: xsFile)
+        try install(catalog: [build], preferredBuildID: build.id, source: source,
+                    into: localModsFolder, fileManager: fileManager)
+    }
+
+    /// The complete catalog, not the resolved desktop preview, is exported.
+    /// XS will choose eligible plans using the actual in-game civilization.
+    static func install(catalog: [BuildOrder], preferredBuildID: String? = nil,
+                        source: MapSource, into localModsFolder: URL,
+                        fileManager: FileManager = .default) throws -> URL {
+        let script = try XSBuildExporter.generate(builds: catalog, preferredBuildID: preferredBuildID)
         let mapExtension: String
+        let sourceName: String
         switch source {
-        case .includedGameMap: mapExtension = "rms"
-        case .selectedRMS(let file): mapExtension = file.pathExtension.lowercased()
+        case .includedGameMap(let file):
+            mapExtension = "rms"
+            sourceName = String(file.dropLast(".rms".count))
+        case .selectedRMS(let file):
+            mapExtension = file.pathExtension.lowercased()
+            sourceName = file.deletingPathExtension().lastPathComponent
         }
 
+        // AoE2 merges resources from enabled mods. Give each installation its
+        // own XS name so enabling two catalogs cannot silently substitute the
+        // higher-priority mod's script, even when they wrap the same map.
+        let rawSlug = sourceName.filter { $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-") }
+        let slug = rawSlug.isEmpty ? "custom" : String(rawSlug.prefix(48))
+        let instance = UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
+        let xsFile = "aoe2trainer_\(slug)_\(instance).xs"
+        let mapContent = try makeMapContents(source: source, xsFilename: xsFile)
+
         // The generated directory is uniquely named; no existing mod is changed.
-        let slug = String(xsFile.dropFirst("aoe2trainer_".count).dropLast(".xs".count))
         let modBase = "AoE2Trainer_\(slug)"
         try fileManager.createDirectory(at: localModsFolder, withIntermediateDirectories: true)
         var modURL: URL?
@@ -100,9 +120,9 @@ enum TrainingModPackager {
             try mapContent.write(to: mapsFolder.appendingPathComponent(target.lastPathComponent + ".\(mapExtension)"), options: .atomic)
 
             let manifest: [String: Any] = [
-                "Title": "AoE2 Trainer – \(build.name)",
+                "Title": "AoE2 Trainer – \(sourceName) – Catalog",
                 "Author": "AoE2 Mac Trainer",
-                "Description": "Local training map with XS checkpoints for \(build.strategy).",
+                "Description": "XS training catalog (\(catalog.count) builds). The game detects your civilization and filters eligible plans. External overlay hotkeys are preview-only.",
                 "CacheStatus": 0
             ]
             let data = try JSONSerialization.data(withJSONObject: manifest, options: [.prettyPrinted, .sortedKeys])

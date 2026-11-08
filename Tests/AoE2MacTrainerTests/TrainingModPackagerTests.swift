@@ -11,6 +11,15 @@ final class TrainingModPackagerTests: XCTestCase {
         return folder
     }
 
+    private func exportedScript(in mod: URL) throws -> URL {
+        let directory = mod.appendingPathComponent("resources/_common/xs", isDirectory: true)
+        let scripts = try FileManager.default.contentsOfDirectory(
+            at: directory, includingPropertiesForKeys: nil
+        ).filter { $0.pathExtension == "xs" }
+        XCTAssertEqual(scripts.count, 1)
+        return try XCTUnwrap(scripts.first)
+    }
+
     func testPackagedModContainsRMSAndXS() throws {
         let temp = try makeTempDirectory()
         defer { try? FileManager.default.removeItem(at: temp) }
@@ -18,8 +27,8 @@ final class TrainingModPackagerTests: XCTestCase {
         let source = try XCTUnwrap(TrainingModPackager.builtinMap(for: build))
         let mod = try TrainingModPackager.install(build: build, source: source, into: temp)
 
-        let xsName = XSBuildExporter.recommendedFileName(for: build)
-        let xs = mod.appendingPathComponent("resources/_common/xs/\(xsName)")
+        let xs = try exportedScript(in: mod)
+        let xsName = xs.lastPathComponent
         let rms = mod.appendingPathComponent("resources/_common/random-map-scripts/\(mod.lastPathComponent).rms")
         XCTAssertTrue(FileManager.default.fileExists(atPath: xs.path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: rms.path))
@@ -37,8 +46,30 @@ final class TrainingModPackagerTests: XCTestCase {
         let first = try TrainingModPackager.install(build: build, source: source, into: temp)
         let second = try TrainingModPackager.install(build: build, source: source, into: temp)
         XCTAssertNotEqual(first, second)
+        XCTAssertNotEqual(try exportedScript(in: first).lastPathComponent,
+                          try exportedScript(in: second).lastPathComponent)
         XCTAssertTrue(FileManager.default.fileExists(atPath: first.appendingPathComponent("info.json").path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: second.appendingPathComponent("info.json").path))
+    }
+
+    func testWholeCatalogIsPackagedWithoutResolvingThePreview() throws {
+        let temp = try makeTempDirectory()
+        defer { try? FileManager.default.removeItem(at: temp) }
+        let builds = [
+            BuildOrder(id: "pt-plan", name: "Portuguese plan", civilizations: ["portuguese"],
+                       map: "Арена", strategy: "FC", description: "",
+                       steps: [BuildStep(action: "PT start", targetTimeSeconds: 60, includeOnly: ["portuguese"])]),
+            BuildOrder(id: "tr-plan", name: "Turkish plan", civilizations: ["turks"],
+                       map: "Арена", strategy: "FI", description: "",
+                       steps: [BuildStep(action: "TR start", targetTimeSeconds: 60, includeOnly: ["turks"])])
+        ]
+        let mod = try TrainingModPackager.install(
+            catalog: builds, preferredBuildID: "pt-plan", source: .includedGameMap("Arena.rms"), into: temp
+        )
+        let script = try String(contentsOf: exportedScript(in: mod), encoding: .utf8)
+        XCTAssertTrue(script.contains("Portuguese plan"))
+        XCTAssertTrue(script.contains("Turkish plan"))
+        XCTAssertTrue(script.contains("xsGetPlayerCivilization"))
     }
 
     func testExistingRMSIsCopiedAndNotModified() throws {
