@@ -10,7 +10,7 @@ struct OverlayView: View {
                     .font(.system(size: 11, weight: .bold, design: .rounded))
                     .foregroundStyle(.orange)
                 Spacer()
-                Text((state.isClockFromOCR ? "◉ " : "≈ ") + state.formattedTime)
+                Text("≈ " + state.formattedTime)
                     .font(.system(size: 15, weight: .semibold, design: .monospaced))
                     .foregroundStyle(.white)
             }
@@ -33,7 +33,7 @@ struct OverlayView: View {
                             .font(.system(size: 10, weight: .bold))
                             .foregroundStyle(.orange)
                         Spacer()
-                        if let delay = state.stepDelaySeconds, state.displayGameSeconds > 0 {
+                        if let delay = state.stepDelaySeconds, state.gameSeconds > 0 {
                             Text(delay >= 0 ? "+\(delay) c" : "\(delay) c")
                                 .font(.system(size: 11, weight: .semibold, design: .monospaced))
                                 .foregroundColor(delay > 10 ? Color.red : Color.green)
@@ -56,16 +56,9 @@ struct OverlayView: View {
                         .foregroundStyle(.white.opacity(0.8))
                     }
                     if let villagers = step.targetVillagers {
-                        if let observed = state.liveHUD?.value(.villagers) {
-                            let delta = observed - villagers
-                            Text("Крестьяне: \(observed) / \(villagers) к шагу  (\(delta >= 0 ? "+" : "")\(delta))")
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundColor(delta >= 0 ? .green : .orange)
-                        } else {
-                            Text("Ориентир: \(villagers) крестьян")
-                                .font(.system(size: 11))
-                                .foregroundStyle(.white.opacity(0.8))
-                        }
+                        Text("Ориентир: \(villagers) крестьян")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.white.opacity(0.8))
                     }
                     if let note = step.note {
                         Text(note)
@@ -87,33 +80,6 @@ struct OverlayView: View {
             } else {
                 Text("Не удалось загрузить билд-ордеры")
                     .foregroundStyle(.white)
-            }
-
-            if let hud = state.liveHUD, HUDField.resources.contains(where: { hud.value($0) != nil }) {
-                Divider().overlay(.white.opacity(0.15))
-                Text("ЗАПАСЫ · Δ/ИГР. МИН (не добыча)")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(.orange)
-                HStack(spacing: 12) {
-                    ForEach(HUDField.resources) { resource in
-                        if let stock = hud.value(resource) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(resource.title)
-                                    .foregroundStyle(.white.opacity(0.6))
-                                Text("\(stock)")
-                                    .foregroundStyle(.white)
-                                if let rate = state.netResourceRate(resource) {
-                                    Text("\(rate >= 0 ? "+" : "")\(rate)/м")
-                                        .foregroundColor(rate < 0 ? .orange : .green)
-                                } else {
-                                    Text("…/м")
-                                        .foregroundStyle(.white.opacity(0.5))
-                                }
-                            }
-                            .font(.system(size: 10, weight: .medium, design: .monospaced))
-                        }
-                    }
-                }
             }
 
             Divider().overlay(.white.opacity(0.15))

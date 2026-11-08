@@ -4,12 +4,9 @@ import SwiftUI
 @MainActor
 final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
     private let state = TrainerState()
-    private let hudReader = HUDReader()
     private var overlay: OverlayController?
     private var hotkeys: HotkeyManager?
     private var statusItem: NSStatusItem?
-    private var ocrMenuItem: NSMenuItem?
-    private var calibrationWindow: NSWindow?
     private var timer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -25,16 +22,8 @@ final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
             Task { @MainActor in self?.execute(key) }
         }
 
-        if UserDefaults.standard.bool(forKey: "HUDReader.enabled") {
-            hudReader.start()
-        }
-
         timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                guard let self else { return }
-                self.state.tick()
-                self.state.recordHUD(self.hudReader.snapshot)
-            }
+            Task { @MainActor in self?.state.tick() }
         }
     }
 
@@ -65,18 +54,7 @@ final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
         addAction("Показать / скрыть панель · ⌃⌥H", to: menu, selector: #selector(toggleOverlay))
 
         menu.addItem(.separator())
-        addAction("Настроить захват HUD…", to: menu, selector: #selector(configureHUD))
-        let ocrItem = NSMenuItem(
-            title: "Включить чтение HUD",
-            action: #selector(toggleOCR),
-            keyEquivalent: ""
-        )
-        ocrItem.target = self
-        ocrItem.isEnabled = hudReader.layout.hasRegions
-        menu.addItem(ocrItem)
-        ocrMenuItem = ocrItem
-
-        menu.addItem(.separator())
+        addAction("Экспорт XS для выбранного билда…", to: menu, selector: #selector(exportXS))
         let submenu = NSMenu(title: "Билд-ордер")
         for (index, build) in state.builds.enumerated() {
             let buildItem = NSMenuItem(title: build.name, action: #selector(selectBuild(_:)), keyEquivalent: "")
@@ -107,54 +85,22 @@ final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
     @objc private func reset() { state.reset() }
     @objc private func quit() { NSApp.terminate(nil) }
 
-    @objc private func toggleOCR() {
-        if hudReader.isRunning { hudReader.stop() } else { hudReader.start() }
-        refreshOCRMenu()
-    }
-
-    private func refreshOCRMenu() {
-        ocrMenuItem?.isEnabled = hudReader.layout.hasRegions
-        ocrMenuItem?.title = hudReader.isRunning ? "Остановить чтение HUD" : "Включить чтение HUD"
-    }
-
-    @objc private func configureHUD() {
-        Task { @MainActor in
-            do {
-                let preview = try await hudReader.capturePreview()
-                let view = HUDCalibrationView(
-                    image: preview,
-                    layout: hudReader.layout,
-                    onSave: { [weak self] layout in
-                        self?.hudReader.apply(layout)
-                        self?.refreshOCRMenu()
-                        self?.calibrationWindow?.close()
-                        self?.calibrationWindow = nil
-                    },
-                    onCancel: { [weak self] in
-                        self?.calibrationWindow?.close()
-                        self?.calibrationWindow = nil
-                    }
-                )
-
-                let window = NSWindow(
-                    contentRect: NSRect(x: 0, y: 0, width: 930, height: 720),
-                    styleMask: [.titled, .closable, .miniaturizable],
-                    backing: .buffered,
-                    defer: false
-                )
-                window.title = "AoE2 Trainer — настройка HUD"
-                window.contentView = NSHostingView(rootView: view)
-                window.center()
-                window.makeKeyAndOrderFront(nil)
-                NSApp.activate(ignoringOtherApps: true)
-                calibrationWindow = window
-            } catch {
-                let alert = NSAlert()
-                alert.messageText = "Не удалось получить снимок экрана"
-                alert.informativeText = error.localizedDescription +
-                    "\nРазреши запись экрана для AoE2 Mac Trainer в Системных настройках macOS."
-                alert.runModal()
+    @objc private func exportXS() {
+        guard let build = state.selectedBuild else { return }
+        do {
+            let script = try XSBuildExporter.generate(for: build)
+            let panel = NSSavePanel()
+            panel.title = "Сохранить XS-модуль тренера"
+            panel.nameFieldStringValue = XSBuildExporter.recommendedFileName(for: build)
+            panel.message = "Для запуска в AoE2 добавь #includeXS <имя файла> в пользовательскую RMS-карту."
+            if panel.runModal() == .OK, let url = panel.url {
+                try script.write(to: url, atomically: true, encoding: .utf8)
             }
+        } catch {
+            let alert = NSAlert()
+            alert.messageText = "Не удалось экспортировать XS"
+            alert.informativeText = error.localizedDescription
+            alert.runModal()
         }
     }
 
