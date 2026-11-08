@@ -13,5 +13,7 @@
     <key>LSMinimumSystemVersion</key><string>13.0</string>
     <key>LSUIElement</key><true/>
     <key>NSHighResolutionCapable</key><true/>
+    <key>NSScreenCaptureUsageDescription</key>
+    <string>Распознавание игрового HUD и показателей экономики. Изображения обрабатываются только на вашем Mac.</string>
 </dict>
 </plist>

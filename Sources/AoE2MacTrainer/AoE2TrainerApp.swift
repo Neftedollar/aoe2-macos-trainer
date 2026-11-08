@@ -4,9 +4,12 @@ import SwiftUI
 @MainActor
 final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
     private let state = TrainerState()
+    private let hudReader = HUDReader()
     private var overlay: OverlayController?
     private var hotkeys: HotkeyManager?
     private var statusItem: NSStatusItem?
+    private var ocrMenuItem: NSMenuItem?
+    private var calibrationWindow: NSWindow?
     private var timer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -22,8 +25,16 @@ final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
             Task { @MainActor in self?.execute(key) }
         }
 
+        if UserDefaults.standard.bool(forKey: "HUDReader.enabled") {
+            hudReader.start()
+        }
+
         timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.state.tick() }
+            Task { @MainActor in
+                guard let self else { return }
+                self.state.tick()
+                self.state.recordHUD(self.hudReader.snapshot)
+            }
         }
     }
 
@@ -52,6 +63,18 @@ final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
         addAction("Пауза / старт таймера · ⌃⌥S", to: menu, selector: #selector(toggleClock))
         addAction("Сбросить тренировку · ⌃⌥R", to: menu, selector: #selector(reset))
         addAction("Показать / скрыть панель · ⌃⌥H", to: menu, selector: #selector(toggleOverlay))
+
+        menu.addItem(.separator())
+        addAction("Настроить захват HUD…", to: menu, selector: #selector(configureHUD))
+        let ocrItem = NSMenuItem(
+            title: "Включить чтение HUD",
+            action: #selector(toggleOCR),
+            keyEquivalent: ""
+        )
+        ocrItem.target = self
+        ocrItem.isEnabled = hudReader.layout.hasRegions
+        menu.addItem(ocrItem)
+        ocrMenuItem = ocrItem
 
         menu.addItem(.separator())
         let submenu = NSMenu(title: "Билд-ордер")
@@ -83,6 +106,57 @@ final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
     @objc private func toggleOverlay() { overlay?.toggle() }
     @objc private func reset() { state.reset() }
     @objc private func quit() { NSApp.terminate(nil) }
+
+    @objc private func toggleOCR() {
+        if hudReader.isRunning { hudReader.stop() } else { hudReader.start() }
+        refreshOCRMenu()
+    }
+
+    private func refreshOCRMenu() {
+        ocrMenuItem?.isEnabled = hudReader.layout.hasRegions
+        ocrMenuItem?.title = hudReader.isRunning ? "Остановить чтение HUD" : "Включить чтение HUD"
+    }
+
+    @objc private func configureHUD() {
+        Task { @MainActor in
+            do {
+                let preview = try await hudReader.capturePreview()
+                let view = HUDCalibrationView(
+                    image: preview,
+                    layout: hudReader.layout,
+                    onSave: { [weak self] layout in
+                        self?.hudReader.apply(layout)
+                        self?.refreshOCRMenu()
+                        self?.calibrationWindow?.close()
+                        self?.calibrationWindow = nil
+                    },
+                    onCancel: { [weak self] in
+                        self?.calibrationWindow?.close()
+                        self?.calibrationWindow = nil
+                    }
+                )
+
+                let window = NSWindow(
+                    contentRect: NSRect(x: 0, y: 0, width: 930, height: 720),
+                    styleMask: [.titled, .closable, .miniaturizable],
+                    backing: .buffered,
+                    defer: false
+                )
+                window.title = "AoE2 Trainer — настройка HUD"
+                window.contentView = NSHostingView(rootView: view)
+                window.center()
+                window.makeKeyAndOrderFront(nil)
+                NSApp.activate(ignoringOtherApps: true)
+                calibrationWindow = window
+            } catch {
+                let alert = NSAlert()
+                alert.messageText = "Не удалось получить снимок экрана"
+                alert.informativeText = error.localizedDescription +
+                    "\nРазреши запись экрана для AoE2 Mac Trainer в Системных настройках macOS."
+                alert.runModal()
+            }
+        }
+    }
 
     @objc private func selectBuild(_ sender: NSMenuItem) {
         state.selectBuild(sender.tag)
