@@ -1,0 +1,82 @@
+[
+  {
+    "id": "arabia-scouts",
+    "name": "Scouts — базовое открытие",
+    "civilization": "Любая кавалерийская",
+    "map": "Аравия",
+    "strategy": "Scouts → Knights",
+    "description": "Учебная последовательность. Тайминги уточняются по эталонному реплею.",
+    "steps": [
+      { "action": "Шесть крестьян на овец", "targetVillagers": 6, "targetTimeSeconds": 0, "allocation": { "food": 6, "wood": 0, "gold": 0, "stone": 0 } },
+      { "action": "Построй дом и отправь на дерево", "targetVillagers": 7, "targetTimeSeconds": 100, "allocation": { "food": 6, "wood": 1, "gold": 0, "stone": 0 } },
+      { "action": "Заманивай первого кабана", "targetVillagers": 10, "targetTimeSeconds": 175, "note": "Следи за непрерывным производством крестьян." },
+      { "action": "Построй мельницу у ягод", "targetVillagers": 13, "targetTimeSeconds": 250 },
+      { "action": "Второй кабан и дополнительные фермы", "targetVillagers": 17, "targetTimeSeconds": 350 },
+      { "action": "Подготовь бараки и переход в Феодал", "targetVillagers": 20, "targetTimeSeconds": 430, "note": "Числа ориентировочные, адаптируй к бонусам цивилизации." },
+      { "action": "Конюшня, топор и первые скауты", "targetTimeSeconds": 580, "note": "Во время атаки не останавливай экономику." }
+    ]
+  },
+  {
+    "id": "arabia-archers",
+    "name": "Archers — базовое открытие",
+    "civilization": "Любая лучная",
+    "map": "Аравия",
+    "strategy": "Archers → Crossbows",
+    "description": "Учебный шаблон, не оптимизированный для конкретного патча.",
+    "steps": [
+      { "action": "Начни с овец и непрерывного создания крестьян", "targetVillagers": 6, "targetTimeSeconds": 0 },
+      { "action": "Добавь лесорубов и построй лесопилку", "targetVillagers": 10, "targetTimeSeconds": 175 },
+      { "action": "Заманивай кабана, развивай пищевую экономику", "targetVillagers": 13, "targetTimeSeconds": 250 },
+      { "action": "Построй бараки перед переходом в Феодал", "targetVillagers": 21, "targetTimeSeconds": 450 },
+      { "action": "Стрельбище и кузница; поставь крестьян на золото", "targetTimeSeconds": 600 },
+      { "action": "Давление лучниками; готовь арбалеты", "targetTimeSeconds": 760 }
+    ]
+  },
+  {
+    "id": "arena-fast-castle",
+    "name": "Fast Castle — базовый",
+    "civilization": "Универсальный",
+    "map": "Арена",
+    "strategy": "Fast Castle → Boom",
+    "description": "Упражнение в экономике и быстром развитии.",
+    "steps": [
+      { "action": "Начни с овец и постоянного производства крестьян", "targetVillagers": 6, "targetTimeSeconds": 0 },
+      { "action": "Разведай базу и пополняй запасы дерева", "targetVillagers": 12, "targetTimeSeconds": 230 },
+      { "action": "Кабаны, ягоды и фермы", "targetVillagers": 18, "targetTimeSeconds": 380 },
+      { "action": "Подготовь переход в Феодал", "targetVillagers": 25, "targetTimeSeconds": 560 },
+      { "action": "Кузница и рынок, затем переход в Замки", "targetTimeSeconds": 800, "note": "Учитывай бонусы своей цивилизации." },
+      { "action": "После перехода: два новых ТЦ или военная агрессия", "targetTimeSeconds": 1000, "note": "Решение зависит от разведки и стратегии соперника." }
+    ]
+  },
+  {
+    "id": "portuguese-arena-fast-castle",
+    "name": "Portuguese — Fast Castle",
+    "civilization": "Португальцы",
+    "map": "Арена",
+    "strategy": "Fast Castle → Boom",
+    "description": "Персональный тренировочный шаблон для знакомой цивилизации.",
+    "steps": [
+      { "action": "Наладь непрерывное создание крестьян и сбор с овец", "targetVillagers": 6, "targetTimeSeconds": 0 },
+      { "action": "Лесопилка и стабильная добыча дерева", "targetVillagers": 12, "targetTimeSeconds": 230 },
+      { "action": "Сбалансируй еду для перехода в Феодал", "targetVillagers": 24, "targetTimeSeconds": 540 },
+      { "action": "Кузница, рынок и заказ Замковой эпохи", "targetTimeSeconds": 790 },
+      { "action": "Добавь ТЦ, фермы и следи за простоем", "targetTimeSeconds": 990, "note": "Включай военное производство до того, как отстанешь от соперника." }
+    ]
+  },
+  {
+    "id": "spanish-arena-castle-drop",
+    "name": "Spanish — Castle Drop",
+    "civilization": "Испанцы",
+    "map": "Арена",
+    "strategy": "Fast Castle → Castle Drop",
+    "description": "Шаблон для тренировки распределения крестьян перед замком.",
+    "steps": [
+      { "action": "Производи крестьян без простоя ТЦ", "targetVillagers": 6, "targetTimeSeconds": 0 },
+      { "action": "Распредели экономику между пищей, деревом и камнем", "targetVillagers": 15, "targetTimeSeconds": 300 },
+      { "action": "Подготовь экономику для Феодала", "targetVillagers": 25, "targetTimeSeconds": 560 },
+      { "action": "Закажи Замковую эпоху и набери камень на замок", "targetTimeSeconds": 800 },
+      { "action": "Разведай позицию и подготовь строителей", "targetTimeSeconds": 970 },
+      { "action": "Поставь замок и начинай производство конкистадоров", "targetTimeSeconds": 1070, "note": "Это упражнение, а не гарантия безопасного castle drop." }
+    ]
+  }
+]

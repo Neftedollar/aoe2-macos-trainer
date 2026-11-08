@@ -1,0 +1,31 @@
+name: macOS Build and Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Swift version
+        run: swift --version
+
+      - name: Unit tests
+        run: swift test
+
+      - name: Build macOS application
+        run: bash Scripts/build-app.sh
+
+      - name: Archive application
+        run: ditto -c -k --sequesterRsrc --keepParent .build/AoE2MacTrainer.app AoE2MacTrainer-macos.zip
+
+      - name: Upload application artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AoE2MacTrainer-macos
+          path: AoE2MacTrainer-macos.zip
