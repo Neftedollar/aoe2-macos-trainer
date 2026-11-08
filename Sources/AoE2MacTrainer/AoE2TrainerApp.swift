@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 @MainActor
 final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
@@ -36,7 +37,9 @@ final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
         switch key {
         case .nextStep: state.next()
         case .previousStep: state.previous()
-        case .cycleBuild: state.cycleBuild()
+        case .cycleBuild:
+            state.cycleBuild()
+            populateBuildMenu()
         case .toggleClock: state.toggleClock()
         case .toggleOverlay: overlay?.toggle()
         case .reset: state.reset()
@@ -55,6 +58,8 @@ final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
         addAction("Показать / скрыть панель · ⌃⌥H", to: menu, selector: #selector(toggleOverlay))
 
         menu.addItem(.separator())
+        addAction("Создать локальный XS-мод…", to: menu, selector: #selector(createTrainingMod))
+        addAction("Создать XS-мод из RMS-файла…", to: menu, selector: #selector(createModFromRMS))
         addAction("Экспорт XS для выбранного билда…", to: menu, selector: #selector(exportXS))
         addAction("Открыть пользовательский JSON…", to: menu, selector: #selector(openCustomBuilds))
         addAction("Перезагрузить JSON-билды", to: menu, selector: #selector(reloadBuilds))
@@ -88,8 +93,10 @@ final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
         guard let submenu = buildSubmenu else { return }
         submenu.removeAllItems()
         for (index, build) in state.builds.enumerated() {
-            let entry = NSMenuItem(title: build.name, action: #selector(selectBuild(_:)), keyEquivalent: "")
+            let entry = NSMenuItem(title: "\(build.name) · \(build.civilization)",
+                                   action: #selector(selectBuild(_:)), keyEquivalent: "")
             entry.tag = index
+            entry.state = index == state.selectedBuildIndex ? .on : .off
             entry.target = self
             submenu.addItem(entry)
         }
@@ -120,6 +127,67 @@ final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
         alert.runModal()
     }
 
+    @objc private func createTrainingMod() {
+        guard let build = state.selectedBuild else { return }
+        guard let source = TrainingModPackager.builtinMap(for: build) else {
+            showError("У карты нет стандартного RMS-источника",
+                      TrainingModPackager.PackageError.unsupportedMap)
+            return
+        }
+        createMod(for: build, source: source)
+    }
+
+    @objc private func createModFromRMS() {
+        guard let build = state.selectedBuild else { return }
+        let panel = NSOpenPanel()
+        panel.title = "Выбери исходную карту RMS"
+        panel.message = "Мы создадим копию карты с подключённым XS. Исходный файл не изменится."
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.allowedContentTypes = ["rms", "rms2"].compactMap { UTType(filenameExtension: $0) }
+        guard panel.runModal() == .OK, let selected = panel.url else { return }
+        createMod(for: build, source: .selectedRMS(selected))
+    }
+
+    private func createMod(for build: BuildOrder, source: TrainingModPackager.MapSource) {
+        guard let folder = localModFolder() else { return }
+        do {
+            let location = try TrainingModPackager.install(
+                build: build, source: source, into: folder
+            )
+            UserDefaults.standard.set(folder.path, forKey: "AoE2Trainer.localModsFolder")
+            NSWorkspace.shared.activateFileViewerSelecting([location])
+            let alert = NSAlert()
+            alert.messageText = "Локальный мод создан"
+            alert.informativeText = "\(location.path)\n\nПерезапусти AoE2, включи мод в Mods → My Mods / Installed Mods, затем Skirmish → Custom Map. Загрузка в нативной версии AoE2 для Mac ещё требует проверки."
+            alert.runModal()
+        } catch {
+            showError("Не удалось создать тренировочный мод", error)
+        }
+    }
+
+    private func localModFolder() -> URL? {
+        let manager = FileManager.default
+        if let savedPath = UserDefaults.standard.string(forKey: "AoE2Trainer.localModsFolder"),
+           manager.fileExists(atPath: savedPath) {
+            return URL(fileURLWithPath: savedPath, isDirectory: true)
+        }
+        let found = TrainingModPackager.detectedLocalModFolders()
+        if found.count == 1 { return found[0] }
+
+        let panel = NSOpenPanel()
+        panel.title = "Папка для локальных модов AoE2"
+        panel.message = "Выбери папку mods/local своего профиля AoE2. Если её пока нет, можно выбрать папку для экспорта и перенести мод позже."
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.canCreateDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.directoryURL = found.first?.deletingLastPathComponent() ??
+            manager.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support", isDirectory: true)
+        return panel.runModal() == .OK ? panel.url : nil
+    }
+
     @objc private func exportXS() {
         guard let build = state.selectedBuild else { return }
         do {
@@ -141,6 +209,7 @@ final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func selectBuild(_ sender: NSMenuItem) {
         state.selectBuild(sender.tag)
+        populateBuildMenu()
     }
 }
 

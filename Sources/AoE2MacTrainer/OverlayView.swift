@@ -17,12 +17,19 @@ struct OverlayView: View {
 
             if let build = state.selectedBuild {
                 VStack(alignment: .leading, spacing: 4) {
+                    Text("СТРАТЕГИЯ \(state.selectedBuildIndex + 1) / \(state.builds.count)")
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .foregroundStyle(.orange)
                     Text(build.name)
                         .font(.system(size: 17, weight: .bold))
                         .foregroundStyle(.white)
-                    Text("\(build.civilization) · \(build.map) · \(build.strategy)")
+                    Text("\(build.map) · \(build.strategy)")
                         .font(.system(size: 11))
                         .foregroundStyle(.white.opacity(0.65))
+                    Text("Цивилизации: \(build.civilization)")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.white.opacity(0.65))
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 Divider().overlay(.white.opacity(0.15))

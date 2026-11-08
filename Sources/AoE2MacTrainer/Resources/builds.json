@@ -2,7 +2,7 @@
   {
     "id": "arabia-scouts",
     "name": "Scouts — базовое открытие",
-    "civilization": "Любая кавалерийская",
+    "civilizations": ["Франки", "Мадьяры", "Берберы", "Гунны"],
     "map": "Аравия",
     "strategy": "Scouts → Knights",
     "description": "Учебная последовательность. Тайминги уточняются по эталонному реплею.",
@@ -21,7 +21,7 @@
   {
     "id": "arabia-archers",
     "name": "Archers — базовое открытие",
-    "civilization": "Любая лучная",
+    "civilizations": ["Бритты", "Эфиопы", "Майя", "Вьетнамцы"],
     "map": "Аравия",
     "strategy": "Archers → Crossbows",
     "description": "Учебный шаблон, не оптимизированный для конкретного патча.",
@@ -38,7 +38,7 @@
   {
     "id": "arena-fast-castle",
     "name": "Fast Castle — базовый",
-    "civilization": "Универсальный",
+    "civilizations": ["Любая"],
     "map": "Арена",
     "strategy": "Fast Castle → Boom",
     "description": "Упражнение в экономике и быстром развитии.",
@@ -55,7 +55,7 @@
   {
     "id": "portuguese-arena-fast-castle",
     "name": "Portuguese — Fast Castle",
-    "civilization": "Португальцы",
+    "civilizations": ["Португальцы"],
     "map": "Арена",
     "strategy": "Fast Castle → Boom",
     "description": "Персональный тренировочный шаблон для знакомой цивилизации.",
@@ -71,7 +71,7 @@
   {
     "id": "spanish-arena-castle-drop",
     "name": "Spanish — Castle Drop",
-    "civilization": "Испанцы",
+    "civilizations": ["Испанцы"],
     "map": "Арена",
     "strategy": "Fast Castle → Castle Drop",
     "description": "Шаблон для тренировки распределения крестьян перед замком.",
@@ -83,6 +83,88 @@
       { "action": "Закажи Замковую эпоху и набери камень на замок", "targetTimeSeconds": 800 },
       { "action": "Разведай позицию и подготовь строителей", "targetTimeSeconds": 970 },
       { "action": "Поставь замок и начинай производство конкистадоров", "targetTimeSeconds": 1070, "note": "Это упражнение, а не гарантия безопасного castle drop." }
+    ]
+  },
+  {
+    "id": "armenian-georgian-arena-fc",
+    "name": "Armenians / Georgians — Fast Castle",
+    "civilizations": ["Армяне", "Грузины"],
+    "map": "Арена",
+    "strategy": "Fast Castle → Boom",
+    "description": "Общий тренировочный план; для обеих цивилизаций учитывай механику мула. Тайминги учебные.",
+    "steps": [
+      { "action": "Три крестьянина на еде, очередь в ТЦ", "targetTimeSeconds": 0, "targetVillagers": 3 },
+      { "action": "Шесть крестьян на еде", "targetTimeSeconds": 75, "targetVillagers": 6, "allocation": { "food": 6, "wood": 0, "gold": 0, "stone": 0 } },
+      { "action": "Найди дерево; поставь мула вместо лесопилки", "targetTimeSeconds": 235, "targetVillagers": 12, "note": "Проверка мула автоматикой не выполняется." },
+      { "action": "Подготовь кабанов, ягоды и фермы", "targetTimeSeconds": 390, "targetVillagers": 18 },
+      { "action": "Сбалансируй еду и золото для Замковой эпохи", "targetTimeSeconds": 565, "targetVillagers": 25 },
+      { "action": "Рынок и кузница для заказа Замковой эпохи", "targetTimeSeconds": 800, "unitGoals": [{ "objectId": 84, "count": 1, "label": "Market" }, { "objectId": 103, "count": 1, "label": "Smith" }] },
+      { "action": "Добавь второй ТЦ и продолжай производство", "targetTimeSeconds": 1050, "unitGoals": [{ "objectId": 109, "count": 2, "label": "TC" }] }
+    ]
+  },
+  {
+    "id": "arabia-fast-castle-knights",
+    "name": "Arabia — Fast Castle Knights",
+    "civilizations": ["Франки", "Берберы", "Мадьяры", "Гунны"],
+    "map": "Аравия",
+    "strategy": "Fast Castle → Knights",
+    "description": "Уязвимо к раннему давлению; тренируй с ИИ и адаптируй к разведке.",
+    "steps": [
+      { "action": "Три крестьянина на овец", "targetTimeSeconds": 0, "targetVillagers": 3 },
+      { "action": "Шесть на еде", "targetTimeSeconds": 75, "targetVillagers": 6, "allocation": { "food": 6, "wood": 0, "gold": 0, "stone": 0 } },
+      { "action": "Первые лесорубы, кабан и ягоды", "targetTimeSeconds": 245, "targetVillagers": 13 },
+      { "action": "Закажи Феодальную эпоху", "targetTimeSeconds": 520, "targetVillagers": 24 },
+      { "action": "Рынок и кузница, затем Замковая эпоха", "targetTimeSeconds": 745, "unitGoals": [{ "objectId": 84, "count": 1, "label": "Market" }, { "objectId": 103, "count": 1, "label": "Smith" }] },
+      { "action": "Конюшня, золотодобыча, первые рыцари", "targetTimeSeconds": 970, "unitGoals": [{ "objectId": 101, "count": 1, "label": "Stable" }], "note": "Не игнорируй разведку и оборону." }
+    ]
+  },
+  {
+    "id": "arena-fc-monk-siege",
+    "name": "Arena — Fast Castle Monks",
+    "civilizations": ["Азтеки", "Бирманцы", "Литовцы"],
+    "map": "Арена",
+    "strategy": "Fast Castle → Monks + Siege",
+    "description": "Упражнение для контроля перехода и первых монастырей; цели на осаду позже.",
+    "steps": [
+      { "action": "Три крестьянина на еду", "targetTimeSeconds": 0, "targetVillagers": 3 },
+      { "action": "Шесть на еде", "targetTimeSeconds": 75, "targetVillagers": 6 },
+      { "action": "Разведай карту, добавь лесорубов", "targetTimeSeconds": 270, "targetVillagers": 15 },
+      { "action": "Подготовь переход в Феодал", "targetTimeSeconds": 550, "targetVillagers": 25 },
+      { "action": "Рынок и кузница; закажи Замковую эпоху", "targetTimeSeconds": 790, "unitGoals": [{ "objectId": 84, "count": 1, "label": "Market" }, { "objectId": 103, "count": 1, "label": "Smith" }] },
+      { "action": "Построй монастырь и начни тренировать монахов", "targetTimeSeconds": 1000, "unitGoals": [{ "objectId": 104, "count": 1, "label": "Monastery" }] }
+    ]
+  },
+  {
+    "id": "arena-fast-imperial",
+    "name": "Arena — Fast Imperial",
+    "civilizations": ["Турки", "Итальянцы", "Португальцы"],
+    "map": "Арена",
+    "strategy": "Fast Imperial → Power Spike",
+    "description": "Учебный план на экономический рывок; целевые времена не являются оптимизированным билдом.",
+    "steps": [
+      { "action": "Стартовая еда и непрерывный ТЦ", "targetTimeSeconds": 0, "targetVillagers": 3 },
+      { "action": "Шесть на еде", "targetTimeSeconds": 75, "targetVillagers": 6 },
+      { "action": "Подготовь дерево, кабанов и ягоды", "targetTimeSeconds": 270, "targetVillagers": 15 },
+      { "action": "Собирай еду для Феодальной эпохи", "targetTimeSeconds": 560, "targetVillagers": 25 },
+      { "action": "Рынок и кузница для Замковой эпохи", "targetTimeSeconds": 800, "unitGoals": [{ "objectId": 84, "count": 1, "label": "Market" }, { "objectId": 103, "count": 1, "label": "Smith" }] },
+      { "action": "Готовь 1000 еды и 800 золота для Империи", "targetTimeSeconds": 1050, "note": "Пока ручная цель: точные запасы ресурсов как цель в XS не подключены." },
+      { "action": "Закажи Имперскую эпоху и готовь войска", "targetTimeSeconds": 1200, "note": "Сверь тайминг с фактическим возрастом после проверки игрового XS." }
+    ]
+  },
+  {
+    "id": "amazon-tunnel-fc-boom",
+    "name": "Amazon Tunnel — Fast Castle Boom",
+    "civilizations": ["Португальцы", "Испанцы", "Тевтоны", "Славяне"],
+    "map": "Amazon Tunnel",
+    "strategy": "Fast Castle → 3 TC Boom",
+    "description": "Для тренировки в закрытых командных играх; для генерации мода выбери исходный RMS-файл.",
+    "steps": [
+      { "action": "Сразу производи крестьян и разведи сбор еды", "targetTimeSeconds": 0, "targetVillagers": 3 },
+      { "action": "Шесть крестьян на еде", "targetTimeSeconds": 75, "targetVillagers": 6 },
+      { "action": "Разведка тоннеля, дерево и еда", "targetTimeSeconds": 285, "targetVillagers": 16 },
+      { "action": "Подготовь Феодал и экономику на золоте", "targetTimeSeconds": 590, "targetVillagers": 26 },
+      { "action": "Рынок и кузница, заказ Замковой эпохи", "targetTimeSeconds": 820, "unitGoals": [{ "objectId": 84, "count": 1, "label": "Market" }, { "objectId": 103, "count": 1, "label": "Smith" }] },
+      { "action": "Строй три ТЦ и масштабируй фермы", "targetTimeSeconds": 1170, "unitGoals": [{ "objectId": 109, "count": 3, "label": "TC" }] }
     ]
   }
 ]
