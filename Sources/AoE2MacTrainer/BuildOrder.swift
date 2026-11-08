@@ -543,14 +543,11 @@ enum BuildOrderLibrary {
                           strategyFamily: build.strategyFamily, startingFoodRequirements: build.startingFoodRequirements)
     }
 
-    static func bundled() -> [BuildOrder] {
-        guard let url = Bundle.module.url(forResource: "builds", withExtension: "json"),
-              let data = try? Data(contentsOf: url),
-              let builds = try? decode(data) else {
-            assertionFailure("Missing or invalid builds.json")
-            return []
+    static func bundled() throws -> [BuildOrder] {
+        guard let url = TrainerResources.bundle?.url(forResource: "builds", withExtension: "json") else {
+            throw LibraryError.invalidDocument("В приложении отсутствует встроенный каталог builds.json.")
         }
-        return builds
+        return try decode(Data(contentsOf: url))
     }
 
     static func merged(bundled: [BuildOrder], custom: [BuildOrder]) -> [BuildOrder] {

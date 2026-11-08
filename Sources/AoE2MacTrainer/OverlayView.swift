@@ -6,31 +6,31 @@ struct OverlayView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Label("AOE2 TRAINER · PREVIEW", systemImage: "graduationcap.fill")
+                Label("AOE2 TRAINER", systemImage: "graduationcap.fill")
                     .font(.system(size: 11, weight: .bold, design: .rounded))
                     .foregroundStyle(.orange)
                 Spacer()
-                Text("≈ " + state.formattedTime)
-                    .font(.system(size: 15, weight: .semibold, design: .monospaced))
-                    .foregroundStyle(.white)
+                if state.clockRunning || state.gameSeconds > 0 {
+                    Text("Таймер ≈ " + state.formattedTime)
+                        .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                        .foregroundStyle(.white)
+                }
             }
 
             VStack(alignment: .leading, spacing: 3) {
-                Text("Ручной просмотр · нет связи с текущим матчем")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.65))
-                if let civilization = state.previewCivilization {
-                    Text("\(civilization.name) · подходящих билдов: \(state.builds.count)")
+                Text(state.connectionTitle)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(state.match == nil ? Color.white.opacity(0.65) : Color.green)
+                if state.match == nil, let civilization = state.previewCivilization {
+                    Text("\(civilization.name) · \(PreviewText.builds(state.builds.count))")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(.orange)
-                } else {
-                    Text("Цивилизация PREVIEW не выбрана")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.white.opacity(0.65))
                 }
-                Text("Еда вручную: толкаемая \(foodCount(state.previewFoodEvidence.pushableHuntCount)) · мелкая \(foodCount(state.previewFoodEvidence.smallGameCount))")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.white.opacity(0.6))
+                if !foodSummary.isEmpty {
+                    Text("Для плана · " + foodSummary)
+                        .font(.system(size: 10))
+                        .foregroundStyle(.white.opacity(0.6))
+                }
             }
 
             if let message = state.loadErrorMessage {
@@ -83,7 +83,7 @@ struct OverlayView: View {
 
                 if let step = state.selectedStep {
                     HStack(alignment: .firstTextBaseline) {
-                        Text("ПРОСМОТР ШАГА \(state.stepIndex + 1) / \(build.steps.count)")
+                        Text("ШАГ \(state.stepIndex + 1) / \(build.steps.count)")
                             .font(.system(size: 10, weight: .bold))
                             .foregroundStyle(.orange)
                         Spacer()
@@ -117,7 +117,7 @@ struct OverlayView: View {
                         .foregroundStyle(.white.opacity(0.8))
                     }
                     if let villagers = step.targetVillagers {
-                        Text("Ориентир: \(villagers) крестьян")
+                        Text("Ориентир · \(PreviewText.villagers(villagers))")
                             .font(.system(size: 11))
                             .foregroundStyle(.white.opacity(0.8))
                     }
@@ -162,8 +162,7 @@ struct OverlayView: View {
             Divider().overlay(.white.opacity(0.15))
             VStack(alignment: .leading, spacing: 3) {
                 Text("⌃⌥N далее · ⌃⌥P назад · ⌃⌥B билд · ⌃⌥S таймер")
-                Text("Хоткеи — только PREVIEW. XS работает отдельно в игре.")
-                Text("≈ Таймер ручной, 1,7×; паузы игры не определяются.")
+                Text("Шаги и таймер тренировки переключаются вручную. Таймер 1,7×.")
             }
             .font(.system(size: 9))
             .foregroundStyle(.white.opacity(0.48))
@@ -181,29 +180,32 @@ struct OverlayView: View {
         .preferredColorScheme(.dark)
     }
 
-    private func foodCount(_ count: Int) -> String {
-        count == 0 ? "?" : String(count)
+    private var foodSummary: String {
+        StartingFoodKind.allCases.compactMap { kind in
+            let count = state.previewFoodEvidence.observedCount(for: kind)
+            return count > 0 ? "\(kind.displayName) · \(count)" : nil
+        }.joined(separator: "   ")
     }
 
     private func foodRequirements(_ requirements: [StartingFoodRequirement]) -> String {
         requirements.map { requirement in
-            let label = requirement.kind == .pushableHunt ? "толкаемая дичь" : "мелкая дичь"
-            return "\(label) ≥ \(requirement.minCount)"
+            "\(requirement.kind.displayName) ≥ \(requirement.minCount)"
         }.joined(separator: " · ")
     }
 
     private var unavailablePlanMessage: String {
         guard state.previewCivilizationID != nil else {
-            return "Выбери цивилизацию в меню 🏰 → PREVIEW. Без неё билды скрыты."
+            return state.match == nil
+                ? "Открой записываемую партию или выбери цивилизацию в меню 🏰 для предпросмотра."
+                : "Без подтверждённой цивилизации подбор билдов недоступен."
         }
         if let requested = state.requestedBuildID {
             let title = state.unavailableRequestedBuild?.name ?? requested
-            let family = state.requestedStrategyFamily.map { " Семейство: \($0)." } ?? ""
-            return "«\(title)» пока недоступен при текущих допущениях.\(family) Другой план не выбран автоматически. Измени еду или выбери подходящий билд через меню / ⌃⌥B."
+            return "«\(title)» сейчас недоступен. Проверь выбранную цивилизацию и дичь на старте или выбери другой билд в меню 🏰."
         }
         if state.builds.isEmpty {
-            return "Нет билдов под эту цивилизацию и допущения еды. «?» означает, что дичь не наблюдалась; это не подтверждённое отсутствие."
+            return "Для выбранной цивилизации и дичи подходящих билдов нет."
         }
-        return "Появились подходящие варианты. Выбери билд в меню 🏰 или нажми ⌃⌥B. Автоматическая смена стратегии не выполняется."
+        return "Выбери билд в меню 🏰 → «Подходящие билды» или нажми ⌃⌥B."
     }
 }

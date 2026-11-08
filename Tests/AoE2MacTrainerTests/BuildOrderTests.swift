@@ -3,8 +3,8 @@ import XCTest
 @testable import AoE2MacTrainer
 
 final class BuildOrderTests: XCTestCase {
-    func testBundledBuildsHaveUniqueIDsAndSteps() {
-        let builds = BuildOrderLibrary.bundled()
+    func testBundledBuildsHaveUniqueIDsAndSteps() throws {
+        let builds = try BuildOrderLibrary.bundled()
         XCTAssertFalse(builds.isEmpty)
         XCTAssertEqual(Set(builds.map(\.id)).count, builds.count)
         XCTAssertTrue(builds.allSatisfy { !$0.steps.isEmpty })

@@ -60,6 +60,9 @@ jobs:
       - name: Archive application
         run: ditto -c -k --sequesterRsrc --keepParent .build/AoE2MacTrainer.app AoE2MacTrainer-macos.zip
 
+      - name: Verify relocated archived application and resource failures
+        run: bash Scripts/check-app-archive.sh AoE2MacTrainer-macos.zip
+
       - name: Upload application artifact
         uses: actions/upload-artifact@v4
         with:
@@ -87,10 +90,10 @@ jobs:
         run: ./xs-check generated/trainer_catalog.xs
 
   release:
-    name: Publish requested v0.6.0 release
+    name: Publish requested v0.7.0 release
     if: >-
       github.event_name == 'push' &&
-      startsWith(github.event.head_commit.message, 'release: publish v0.6.0')
+      startsWith(github.event.head_commit.message, 'release: publish v0.7.0')
     needs: [build, xs-template-check, xs-check]
     runs-on: ubuntu-latest
     permissions:
@@ -115,5 +118,5 @@ jobs:
       - name: Package, verify and publish release assets
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_VERSION: 0.6.0
+          RELEASE_VERSION: 0.7.0
         run: node Scripts/publish-release.mjs

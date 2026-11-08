@@ -2,14 +2,14 @@
 
 A native macOS companion and **XS training module** for Age of Empires II: Definitive Edition. Public, MIT-licensed, experimental. No OCR, screen capture, process-memory access, or automatic game orders.
 
-**Download:** [v0.6.0 release and installation notes](https://github.com/Neftedollar/aoe2-macos-trainer/releases/tag/v0.6.0). The `AoE2MacTrainer-0.6.0-macos-arm64.zip` asset contains the application for Apple Silicon. Generated XS, the JSON catalog and SHA-256 checksums are separate assets; only the application ZIP is needed to begin. This is an experimental prerelease, not an in-game-verified trainer.
+Download the app for Apple Silicon from the [v0.7.0 release](https://github.com/Neftedollar/aoe2-macos-trainer/releases/tag/v0.7.0). Open it before or during a recorded Feral match. The 🏰 menu and floating panel pick up your civilization automatically.
 
 ## What works in each part
 
 | Component | Implemented behavior | Important limitation |
 | --- | --- | --- |
 | Generated XS module | Reads the actual local player's civilization and game clock; observes visible nearby starting hunt; filters a complete build catalog; observes goals and rolling economy metrics; displays the current build inside the game | Requires a custom RMS/scenario that loads it; native Mac gameplay has not yet been tested |
-| macOS floating overlay | Click-through build preview, manual civilization/food selection, JSON reload, hotkeys, mod creation | **PREVIEW only: it is not receiving live XS telemetry**; its manual clock and food inputs are not game observations |
+| macOS floating overlay | Detects an active Feral recording, resolves the local player's civilization, and filters the training plans. Manual preview is available between matches. | The training timer, food choices and step controls belong to the desktop panel. In-game XS metrics stay in the game. |
 | JSON build catalog | Versioned declarations, civilization allowlists, conditional steps, positive food requirements, strategy families, timed goals, source metadata | A valid document is not proof that its timings are achievable in a match |
 
 The current library contains **15 training plans**. The original nine reviewed plans cover 27 explicitly listed civilizations, including Scouts, Archers, Men-at-Arms → Archers, Fast Castle, Turkish Fast Imperial, and Khitan/Armenian/Georgian practice variants. Two additional shared **FC/FI age-training plans cover all 56 registered civilizations**, with regional economic exceptions. Four compact food-sensitive FC/FI variants cover six reviewed normal-start civilizations. These are practice targets, **not 56 optimized military builds**. See the [coverage audit](docs/build-coverage-audit.md) for the remaining gaps.
@@ -26,7 +26,7 @@ bash Scripts/build-app.sh
 open .build/AoE2MacTrainer.app
 ```
 
-The app appears as 🏰 in the menu bar. The transparent overlay passes clicks through to the game. Windowed/borderless mode may be needed if the panel does not appear over a native fullscreen Space. The overlay labels its manual preview state explicitly; selecting a preview civilization is not game detection.
+The app appears as 🏰 in the menu bar. Open the app again in Finder or press Control+Option+H to show the preview. To start with just the menu bar item during a match, run `open -g .build/AoE2MacTrainer.app --args --menu-bar-only`. The transparent overlay passes clicks through to the game. Windowed/borderless mode may be needed if the panel does not appear over a native fullscreen Space. Detection follows the recording that Feral currently has open for writing, including an already-running or paused match. When the game closes that recording, the app returns to preview. The active recorder's civilization is read from supported DE headers. In single-player a matching Feral session file can also identify the sole human player. Unsupported or ambiguous player data leaves the civilization unknown. For games with recording disabled, use the manual preview.
 
 ## Create a training mod
 
@@ -195,7 +195,7 @@ The Khitan plan accounts for pastures and the absence of Knights/Bloodlines. It 
 | Keys | Preview action |
 | --- | --- |
 | Control + Option + N / P | Next / previous effective build step |
-| Control + Option + B | Next build eligible for the manually selected preview civilization and food observations |
+| Control + Option + B | Next build eligible for the detected or preview civilization and selected food counts |
 | Control + Option + S | Start/pause estimated 1.7× clock |
 | Control + Option + R | Reset preview clock and step |
 | Control + Option + H | Show/hide overlay |
@@ -228,4 +228,4 @@ Remaining acceptance checks:
 - [Resource counters](https://ugc.aoe2.rocks/general/resources/resources/)
 - [2026 local-player API rename](https://www.ageofempires.com/news/age-of-empires-ii-definitive-edition-update-185872/)
 
-MIT — see [LICENSE](LICENSE). The implementation and concise build adaptations are original. Third-party guides, videos and linked projects retain their own licenses; their assets and full text are not bundled.
+MIT — see [LICENSE](LICENSE). The recorded-header reader uses the MIT-licensed aoc-mgz layout. Its attribution is included in the source and the app. Third-party guides and videos retain their own licenses.

@@ -7,6 +7,7 @@ final class TrainerState: ObservableObject {
     /// Export the catalog, never the resolved preview below.
     @Published private(set) var catalog: [BuildOrder] = []
     @Published private(set) var builds: [BuildOrder] = []
+    @Published private(set) var match: FeralMatch?
     @Published private(set) var previewCivilizationID: String? = nil
     /// These are manually supplied preview assumptions, never live observations.
     @Published private(set) var previewFoodEvidence: StartingFoodEvidence = .unknown
@@ -23,6 +24,7 @@ final class TrainerState: ObservableObject {
     @Published private(set) var clockRunning = false
 
     private var clock = TrainingClock()
+    private var manualCivilizationID: String?
     private let catalogLoader: () throws -> [BuildOrder]
     /// Preserve progress while a manually edited food assumption temporarily
     /// makes the requested variant unavailable. Explicit navigation resets it.
@@ -73,10 +75,41 @@ final class TrainerState: ObservableObject {
         previewCivilizationID.flatMap(CivilizationCatalog.resolve)
     }
 
-    /// Explicitly manual. This does not set or claim to detect the game's civ.
+    var connectionTitle: String {
+        guard let match else { return "Ожидание матча · предпросмотр" }
+        guard let civilization = match.civilizationID.flatMap(CivilizationCatalog.resolve) else {
+            return "Матч обнаружен · цивилизация неизвестна"
+        }
+        return "Матч подключён · " + civilization.name
+    }
+
+    /// A new recording starts a new training session even when both civs are identical.
+    func updateMatch(_ next: FeralMatch?) {
+        guard match != next else { return }
+        let newSession = match?.id != next?.id
+        match = next
+        if newSession {
+            clock = TrainingClock()
+            gameSeconds = 0
+            clockRunning = false
+            previewFoodEvidence = .unknown
+            requestedBuildID = nil
+            requestedStrategyFamily = nil
+            requestedStepIndex = 0
+        }
+        let civilizationID = next == nil ? manualCivilizationID : next?.civilizationID
+        applyCivilization(civilizationID, force: newSession)
+    }
+
     func selectPreviewCivilization(_ rawID: String?) {
+        guard match == nil else { return }
         let nextID = rawID.flatMap(CivilizationCatalog.resolve)?.id
-        guard nextID != previewCivilizationID else { return }
+        manualCivilizationID = nextID
+        applyCivilization(nextID)
+    }
+
+    private func applyCivilization(_ nextID: String?, force: Bool = false) {
+        guard force || nextID != previewCivilizationID else { return }
         previewCivilizationID = nextID
         selectionNotice = nil
         if nextID == nil {

@@ -19,7 +19,7 @@ final class XSBuildExporterTests: XCTestCase {
     }
 
     func testBundledCatalogUsesRuntimeCivilizationAndStrictFiltering() throws {
-        let builds = BuildOrderLibrary.bundled()
+        let builds = try BuildOrderLibrary.bundled()
         XCTAssertFalse(builds.isEmpty)
         let script = try XSBuildExporter.generate(builds: builds)
         XCTAssertFalse(script.contains("// @CATALOG_SETUP@"))

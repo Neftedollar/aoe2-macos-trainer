@@ -41,11 +41,11 @@ enum XSBuildExporter {
         guard builds.count <= 128, steps.count <= 4096 else {
             throw ExportError.catalogTooLarge
         }
-        guard let url = Bundle.module.url(forResource: "trainer_template", withExtension: "xs"),
+        guard let url = TrainerResources.bundle?.url(forResource: "trainer_template", withExtension: "xs"),
               let template = try? String(contentsOf: url, encoding: .utf8),
               template.components(separatedBy: "// @CATALOG_SETUP@").count == 2,
               template.components(separatedBy: "// @FOOD_OBSERVER@").count == 2,
-              let foodURL = Bundle.module.url(forResource: "food_observation_template", withExtension: "xs"),
+              let foodURL = TrainerResources.bundle?.url(forResource: "food_observation_template", withExtension: "xs"),
               let foodObserver = try? String(contentsOf: foodURL, encoding: .utf8) else {
             throw ExportError.missingTemplate
         }
