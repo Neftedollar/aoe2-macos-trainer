@@ -7,7 +7,7 @@ final class OverlayController {
 
     init(state: TrainerState) {
         panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 350, height: 350),
+            contentRect: NSRect(x: 0, y: 0, width: 350, height: 390),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -22,7 +22,7 @@ final class OverlayController {
         panel.ignoresMouseEvents = true
 
         let view = NSHostingView(rootView: OverlayView(state: state))
-        view.frame = panel.contentView?.bounds ?? NSRect(x: 0, y: 0, width: 350, height: 350)
+        view.frame = panel.contentView?.bounds ?? NSRect(x: 0, y: 0, width: 350, height: 390)
         panel.contentView = view
         moveToUpperRight()
     }
