@@ -1,9 +1,12 @@
 import AppKit
+import Combine
 import SwiftUI
 
 @MainActor
 final class OverlayController {
     private let panel: NSPanel
+    private var hostingView: NSHostingView<OverlayView>?
+    private var stateObservation: AnyCancellable?
 
     init(state: TrainerState) {
         panel = NSPanel(
@@ -24,6 +27,21 @@ final class OverlayController {
         let view = NSHostingView(rootView: OverlayView(state: state))
         view.frame = panel.contentView?.bounds ?? NSRect(x: 0, y: 0, width: 350, height: 390)
         panel.contentView = view
+        hostingView = view
+        stateObservation = state.objectWillChange.sink { [weak self] in
+            // objectWillChange fires before the new published value is stored.
+            // Fit on the next main-loop turn, after SwiftUI updates its content.
+            DispatchQueue.main.async { self?.fitContent() }
+        }
+        fitContent()
+    }
+
+    private func fitContent() {
+        guard let hostingView else { return }
+        hostingView.layoutSubtreeIfNeeded()
+        let availableHeight = (NSScreen.main?.visibleFrame.height ?? 800) - 100
+        let height = min(max(hostingView.fittingSize.height, 220), availableHeight)
+        panel.setContentSize(NSSize(width: 350, height: height))
         moveToUpperRight()
     }
 
@@ -39,7 +57,7 @@ final class OverlayController {
     var isVisible: Bool { panel.isVisible }
 
     func show() {
-        moveToUpperRight()
+        fitContent()
         panel.orderFrontRegardless()
     }
 

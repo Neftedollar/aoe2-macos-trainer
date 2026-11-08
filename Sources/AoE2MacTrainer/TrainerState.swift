@@ -3,21 +3,78 @@ import Foundation
 
 @MainActor
 final class TrainerState: ObservableObject {
-    @Published private(set) var builds: [BuildOrder]
+    /// Original validated definitions, including all civilization/step selectors.
+    /// Export the catalog, never the resolved preview below.
+    @Published private(set) var catalog: [BuildOrder] = []
+    @Published private(set) var builds: [BuildOrder] = []
+    @Published private(set) var previewCivilizationID: String? = nil
+    @Published private(set) var loadErrorMessage: String? = nil
     @Published private(set) var selectedBuildIndex = 0
     @Published private(set) var stepIndex = 0
     @Published private(set) var gameSeconds = 0
     @Published private(set) var clockRunning = false
 
     private var clock = TrainingClock()
+    private let catalogLoader: () throws -> [BuildOrder]
 
-    init(builds: [BuildOrder] = (try? BuildOrderLibrary.loadAll()) ?? BuildOrderLibrary.bundled()) {
-        self.builds = builds
+    /// The optional injected catalog/loader make preview and atomic reload
+    /// behavior testable without changing a user's application-support files.
+    init(builds: [BuildOrder]? = nil,
+         loader: @escaping () throws -> [BuildOrder] = { try BuildOrderLibrary.loadAll() }) {
+        catalogLoader = loader
+        do {
+            let initial: [BuildOrder]
+            if let builds {
+                initial = builds
+            } else {
+                initial = try loader()
+            }
+            try BuildOrderLibrary.validate(initial)
+            catalog = initial
+        } catch {
+            // An invalid custom JSON must not silently look like a successful
+            // load of the bundled catalog. Start disconnected and report it.
+            loadErrorMessage = error.localizedDescription
+        }
     }
 
     func reloadBuilds() throws {
-        builds = try BuildOrderLibrary.loadAll()
-        selectedBuildIndex = 0
+        do {
+            let replacement = try catalogLoader()
+            try BuildOrderLibrary.validate(replacement)
+            let preferredID = selectedBuild?.id
+            let eligible = BuildOrderLibrary.eligible(
+                replacement, civilizationID: previewCivilizationID
+            )
+            // Commit only after the whole replacement is loaded and validated.
+            catalog = replacement
+            applyEligible(eligible, preferredID: preferredID)
+            loadErrorMessage = nil
+        } catch {
+            loadErrorMessage = error.localizedDescription
+            throw error
+        }
+    }
+
+    var previewCivilization: CivilizationDefinition? {
+        previewCivilizationID.flatMap(CivilizationCatalog.resolve)
+    }
+
+    /// Explicitly manual. This does not set or claim to detect the game's civ.
+    func selectPreviewCivilization(_ rawID: String?) {
+        let nextID = rawID.flatMap(CivilizationCatalog.resolve)?.id
+        guard nextID != previewCivilizationID else { return }
+        let preferredID = selectedBuild?.id
+        previewCivilizationID = nextID
+        applyEligible(BuildOrderLibrary.eligible(catalog, civilizationID: nextID),
+                      preferredID: preferredID)
+    }
+
+    private func applyEligible(_ eligible: [BuildOrder], preferredID: String?) {
+        builds = eligible
+        selectedBuildIndex = preferredID.flatMap { id in
+            eligible.firstIndex { $0.id == id }
+        } ?? 0
         stepIndex = 0
     }
 
@@ -36,7 +93,7 @@ final class TrainerState: ObservableObject {
     }
 
     func next() {
-        guard let selectedBuild else { return }
+        guard let selectedBuild, !selectedBuild.steps.isEmpty else { return }
         stepIndex = min(stepIndex + 1, selectedBuild.steps.count - 1)
     }
 
