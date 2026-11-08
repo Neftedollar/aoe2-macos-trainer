@@ -11,6 +11,22 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  xs-template-check:
+    name: XS template syntax and API check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download pinned XS Check release
+        run: |
+          curl --fail --location --retry 3 https://github.com/Divy1211/xs-check/releases/download/v0.2.32/xs-check --output xs-check
+          echo '93deca6c96503124ec349e70b4b3042d99a9ad562aaa97125f0cdb9db7789f3f  xs-check' | sha256sum --check
+          chmod +x xs-check
+
+      - name: Validate runtime template before the macOS build finishes
+        run: ./xs-check Sources/AoE2MacTrainer/Resources/trainer_template.xs
+
   build:
     runs-on: macos-15
     steps:
