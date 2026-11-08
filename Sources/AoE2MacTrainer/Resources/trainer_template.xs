@@ -385,11 +385,11 @@ string trainerWindowCaption() {
     return ("ECONOMY | WARMUP: " + remaining + " game seconds remaining");
 }
 
-string trainerRateLine(string label = "", float rate = 0.0, float workers = 0.0) {
+string trainerRateLine(string resourceName = "", float rate = 0.0, float workers = 0.0) {
     if (rate < 0.0 || workers < 0.0) {
-        return (label + " --/min | avg -- vils | --/vil/min");
+        return (resourceName + " --/min | avg -- vils | --/vil/min");
     }
-    string line = label + " ~" + trainerOneDecimal(rate) + "/min | avg ~" +
+    string line = resourceName + " ~" + trainerOneDecimal(rate) + "/min | avg ~" +
                   trainerOneDecimal(workers) + " vils";
     if (workers > 0.0) {
         line = line + " | ~" + trainerOneDecimal(rate / workers) + "/vil/min";

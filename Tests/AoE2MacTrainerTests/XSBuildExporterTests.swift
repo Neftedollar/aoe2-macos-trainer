@@ -195,6 +195,8 @@ final class XSBuildExporterTests: XCTestCase {
         XCTAssertTrue(script.contains("infiniteLoopLimit = 100000;"))
         XCTAssertTrue(script.contains("return (false);"))
         XCTAssertTrue(script.contains("void trainerSelectBuildSlot(int slot = 0)"))
+        XCTAssertFalse(script.contains("string label ="))
+        XCTAssertTrue(script.contains("string trainerRateLine(string resourceName ="))
     }
 
     func testRollingWindowKeepsFractionalTimeWeightedWorkerCounts() throws {
