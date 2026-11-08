@@ -233,6 +233,7 @@ final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
             let alert = NSAlert()
             alert.messageText = "Локальный XS-мод каталога создан"
             alert.informativeText = "\(location.path)\n\nПерезапусти AoE2, включи мод в Mods → My Mods / Installed Mods, затем Skirmish → Custom Map.\n\nВ мод включён весь каталог. XS определяет реальную цивилизацию в игре и выбирает совместимый билд. Хоткеи приложения переключают только PREVIEW и не отправляют команды в XS. Загрузка в нативной версии AoE2 для Mac ещё требует проверки."
+            alert.informativeText += "\n\n" + XSBuildExporter.textEncodingNotice
             alert.runModal()
         } catch {
             showError("Не удалось создать тренировочный мод", error)
@@ -268,7 +269,7 @@ final class TrainerAppDelegate: NSObject, NSApplicationDelegate {
             let panel = NSSavePanel()
             panel.title = "Сохранить XS-модуль тренера"
             panel.nameFieldStringValue = "aoe2trainer_catalog.xs"
-            panel.message = "Экспортируется весь исходный каталог, включая условия цивилизаций. Добавь #includeXS <имя файла> в свою RMS-карту. XS выбирает цивилизацию внутри игры; хоткеи оверлея управляют только PREVIEW."
+            panel.message = "Экспортируется весь исходный каталог, включая условия цивилизаций. Добавь #includeXS <имя файла> в свою RMS-карту. XS выбирает цивилизацию внутри игры; хоткеи оверлея управляют только PREVIEW.\n\n" + XSBuildExporter.textEncodingNotice
             if panel.runModal() == .OK, let url = panel.url {
                 try script.write(to: url, atomically: true, encoding: .utf8)
             }

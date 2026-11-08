@@ -30,6 +30,8 @@ final class XSBuildExporterTests: XCTestCase {
         XCTAssertFalse(script.contains("xsSetPlayerAttribute("))
         XCTAssertFalse(script.contains("xsCreateUnit("))
         XCTAssertFalse(script.contains("xsEffectAmount("))
+        XCTAssertTrue(script.unicodeScalars.allSatisfy { $0.value < 128 })
+        XCTAssertTrue(script.contains("trainerUsesASCIIText = true;"))
     }
 
     func testSingleBuildExporterRetainsMetricsAndTargets() throws {
@@ -55,6 +57,35 @@ final class XSBuildExporterTests: XCTestCase {
         XCTAssertTrue(script.contains("Use \\\"quoted\\\" command on one line"))
         XCTAssertTrue(script.contains("xsArraySetInt(trainerStepTimes, 0, 10)"))
         XCTAssertEqual(XSBuildExporter.recommendedFileName(for: plan), "aoe2trainer_test-custom.xs")
+    }
+
+    func testXSUnicodeLabelsAreExplicitlyTransliteratedWithoutChangingJSONModel() throws {
+        let plan = build(name: "Стрелки → Fast Castle — café", steps: [
+            BuildStep(action: "Феодальная эпоха", targetTimeSeconds: 600,
+                      unitGoals: [UnitGoal(objectId: 82, count: 1, label: "Замок")])
+        ])
+        let script = try XSBuildExporter.generate(for: plan)
+        XCTAssertEqual(plan.name, "Стрелки → Fast Castle — café")
+        XCTAssertEqual(plan.steps[0].action, "Феодальная эпоха")
+        XCTAssertTrue(script.unicodeScalars.allSatisfy { $0.value < 128 })
+        XCTAssertTrue(script.contains("-> Fast Castle - cafe"))
+        XCTAssertTrue(script.contains("Feodal"))
+        XCTAssertTrue(script.contains("Zamok"))
+        XCTAssertTrue(script.contains("TEXT: ASCII transliteration (original in app/JSON)"))
+        XCTAssertTrue(script.contains("trainerUsesASCIIText = true;"))
+        let json = try JSONEncoder().encode(plan)
+        let decoded = try JSONDecoder().decode(BuildOrder.self, from: json)
+        XCTAssertEqual(decoded, plan)
+    }
+
+    func testUntransliterableSymbolsAreNotSilentlyDropped() throws {
+        let plan = build(name: "Camel 🐫", steps: [
+            BuildStep(action: "Keep control \u{001B} visible", targetTimeSeconds: 10)
+        ])
+        let script = try XSBuildExporter.generate(for: plan)
+        XCTAssertTrue(script.unicodeScalars.allSatisfy { $0.value < 128 })
+        XCTAssertTrue(script.contains("[U+1F42B]"))
+        XCTAssertTrue(script.contains("[U+001B]"))
     }
 
     func testUnitWorkerAndTechnologyTargetsHaveContiguousRanges() throws {
@@ -232,5 +263,6 @@ final class XSBuildExporterTests: XCTestCase {
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try script.write(to: url, atomically: true, encoding: .utf8)
         XCTAssertFalse(script.contains("// @CATALOG_SETUP@"))
+        XCTAssertTrue(script.unicodeScalars.allSatisfy { $0.value < 128 })
     }
 }

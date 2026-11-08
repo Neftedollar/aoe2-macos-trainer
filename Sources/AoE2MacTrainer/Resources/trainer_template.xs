@@ -3,6 +3,8 @@
 // Runs only in a custom RMS/scenario that explicitly loads this file.
 // No OCR, memory injection, file telemetry, enemy inspection, or world effects.
 // Runtime bridge from the macOS overlay/hotkeys is NOT implemented.
+// XS literal text uses explicit ASCII transliteration, not Unicode literals.
+// Original Unicode labels are unchanged in the macOS app and source JSON.
 
 const int trainerWindowSeconds = 60;
 const int trainerHistorySize = 64;
@@ -16,6 +18,7 @@ int trainerWindowCoverage = 0;
 bool trainerRecentReset = false;
 
 bool trainerCatalogReady = false;
+bool trainerUsesASCIIText = false;
 int trainerPlayer = -1;
 int trainerCivilization = -1;
 int trainerSampleCount = 0;
@@ -684,6 +687,9 @@ rule trainerMetrics
 
     string text = "TRAINER | " + (now / 60) + "m " + (now % 60) + "s | CIV: " +
                   xsGetPlayerCivName(player, true) + " (#" + trainerCivilization + ")";
+    if (trainerUsesASCIIText) {
+        text = text + "\nTEXT: ASCII transliteration (original in app/JSON)";
+    }
     if (trainerSelectedBuild < 0) {
         text = text + "\nNO MATCHING BUILDS for this civilization";
     } else {

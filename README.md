@@ -60,6 +60,8 @@ The standard-map wrapper uses:
 
 Direct catalog export is also available as `aoe2trainer_catalog.xs`. Reference it before `<PLAYER_SETUP>` in your own RMS. The exported module is a **snapshot**: changing JSON later requires another export before a new match.
 
+**Text encoding:** XS source literals are ASCII-only. The current exporter visibly transliterates Russian/other Unicode labels for the in-game XS panel and substitutes readable equivalents for arrows/dashes. Unsupported symbols become explicit `[U+XXXX]` markers, not silently deleted characters. Original JSON and native macOS preview text remain unchanged. A separate localization-resource bundle is not implemented; the export dialog and XS panel disclose this limitation.
+
 ### In-game selection versus desktop hotkeys
 
 The generated module contains all eligible plans and exposes these **unbound Scenario Editor Script Call entry points**:

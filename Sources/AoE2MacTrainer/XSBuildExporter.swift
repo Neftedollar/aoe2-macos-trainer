@@ -3,6 +3,10 @@ import Foundation
 /// Compiles a JSON catalog into a self-contained XS snapshot. The game, not
 /// the macOS preview, chooses eligible builds using its actual civilization ID.
 enum XSBuildExporter {
+    /// XS source literals are ASCII-only. A localization-resource bundle would
+    /// be a separate integration; JSON and the macOS UI retain original Unicode.
+    static let textEncodingNotice = "В XS подписи пока выводятся транслитом. Оригинальный русский текст сохраняется в приложении и JSON."
+
     enum ExportError: LocalizedError {
         case missingTemplate
         case invalidBuild
@@ -93,8 +97,12 @@ enum XSBuildExporter {
         func setInt(_ variable: String, _ index: Int, _ value: Int) {
             lines.append("    xsArraySetInt(\(variable), \(index), \(value));")
         }
+        var hasTransliteratedText = false
         func setString(_ variable: String, _ index: Int, _ value: String) {
-            lines.append("    xsArraySetString(\(variable), \(index), \"\(escape(value))\");")
+            if value.unicodeScalars.contains(where: { $0.value > 127 }) {
+                hasTransliteratedText = true
+            }
+            lines.append("    xsArraySetString(\(variable), \(index), \"\(escape(asciiText(value)))\");")
         }
 
         stringArray("trainerBuildNames", builds.count)
@@ -174,12 +182,40 @@ enum XSBuildExporter {
             }
         }
 
+        lines.append("    trainerUsesASCIIText = \(hasTransliteratedText ? "true" : "false");")
         return template.replacingOccurrences(of: "// @CATALOG_SETUP@", with: lines.joined(separator: "\n"))
     }
 
     static func recommendedFileName(for build: BuildOrder) -> String {
         let slug = build.id.filter { $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-") }
         return "aoe2trainer_\(slug.isEmpty ? "custom" : slug).xs"
+    }
+
+    /// Transliterate labels rather than silently dropping unsupported text.
+    /// Untransliterable symbols remain visible as explicit [U+XXXX] markers.
+    /// This changes only emitted XS; the source BuildOrder is never modified.
+    private static func asciiText(_ value: String) -> String {
+        let punctuation: [(String, String)] = [
+            ("↔", "<->"), ("→", "->"), ("←", "<-"), ("⇒", "=>"),
+            ("—", "-"), ("–", "-"), ("−", "-"), ("…", "..."), ("×", "x"),
+            ("“", "\""), ("”", "\""), ("„", "\""), ("«", "\""), ("»", "\""),
+            ("‘", "'"), ("’", "'"), ("‚", "'"), ("ʹ", "'")
+        ]
+        var text = value
+        for (original, replacement) in punctuation {
+            text = text.replacingOccurrences(of: original, with: replacement)
+        }
+        text = text.applyingTransform(.toLatin, reverse: false) ?? text
+        text = text.applyingTransform(.stripCombiningMarks, reverse: false) ?? text
+        // Transliteration can introduce modifier-letter primes.
+        text = text.replacingOccurrences(of: "ʹ", with: "'")
+            .replacingOccurrences(of: "ʺ", with: "\"")
+        return text.unicodeScalars.map { scalar in
+            if CharacterSet.whitespacesAndNewlines.contains(scalar) { return " " }
+            if (32...126).contains(scalar.value) { return String(scalar) }
+            let hex = String(scalar.value, radix: 16, uppercase: true)
+            return "[U+" + String(repeating: "0", count: max(0, 4 - hex.count)) + hex + "]"
+        }.joined()
     }
 
     private static func escape(_ value: String) -> String {
