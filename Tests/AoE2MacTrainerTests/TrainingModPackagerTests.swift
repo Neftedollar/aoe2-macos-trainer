@@ -83,9 +83,15 @@ final class TrainingModPackagerTests: XCTestCase {
         )
         try FileManager.default.createDirectory(at: profile, withIntermediateDirectories: true)
         let folders = TrainingModPackager.detectedLocalModFolders(home: temp)
+        let detected = try XCTUnwrap(folders.first)
+        XCTAssertEqual(folders.count, 1)
+        XCTAssertEqual(detected.lastPathComponent, "local")
+        XCTAssertEqual(detected.deletingLastPathComponent().lastPathComponent, "mods")
+        // Compare the actual discovered profile, not the synthetic temporary
+        // root: macOS may expose the same directory as /var or /private/var.
         XCTAssertEqual(
-            folders.map { $0.resolvingSymlinksInPath() },
-            [profile.appendingPathComponent("mods/local", isDirectory: true).resolvingSymlinksInPath()]
+            detected.deletingLastPathComponent().deletingLastPathComponent().lastPathComponent,
+            profile.lastPathComponent
         )
     }
 }
