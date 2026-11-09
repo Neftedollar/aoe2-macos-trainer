@@ -2,7 +2,7 @@
 
 A native macOS companion and **XS training module** for Age of Empires II: Definitive Edition. Public, MIT-licensed, experimental. No OCR, screen capture, process-memory access, or automatic game orders.
 
-Download the app for Apple Silicon from the [v0.7.0 release](https://github.com/Neftedollar/aoe2-macos-trainer/releases/tag/v0.7.0). Open it before or during a recorded Feral match. The 🏰 menu and floating panel pick up your civilization automatically.
+Download the app for Apple Silicon from the [v0.7.1 release](https://github.com/Neftedollar/aoe2-macos-trainer/releases/tag/v0.7.1). Open it before or during a recorded Feral match. The 🏰 menu and floating panel pick up your civilization automatically.
 
 ## What works in each part
 
@@ -188,7 +188,9 @@ Worker assignment is inferred from unit targets/carried resources. Drop-off, idl
 
 See [the source and review notes](docs/build-library-sources.md) for all 15 plans, authors, timing assumptions, and civilization exceptions, and the [coverage audit](docs/build-coverage-audit.md) for per-family coverage and remaining military-build gaps. `source-adapted` identifies an adaptation of an authored guide; `practice-targets` identifies deliberately loose exercise targets. **Neither label means match-verified.**
 
-The Khitan plan accounts for pastures and the absence of Knights/Bloodlines. It is an early-game training variant, not a claimed optimized Mounted Trebuchet opening. Population, living villagers, and time spent researching at the TC are kept distinct.
+The [Khitan 21-pop Scouts → Steppe Lancers plan](docs/khitans-scouts-lancers.md) now has 33 steps: explicit villager assignments, early Mill/Loom, four Scouts, Pastures/Domestication, Castle Age and four/eight Steppe Lancers from one Stable. It is reviewed against **DE Update 188329 (2026-10-27)** and Feral Mac 1.3, including the earlier pasture and scout-line nerfs. It has no mandatory deer requirement and does not use Knights, Bloodlines or standard farm upgrades. Its deadlines remain practice targets pending a real match; Mounted Trebuchets are a separate Imperial follow-up. Population, living villagers, and time spent researching at the TC are kept distinct.
+
+The stable build ID remains `khitans-scouts-pastures`. A custom JSON definition with that ID overrides the revised bundled plan; back up your custom work before updating it. Re-export XS after catalog changes.
 
 ## Hotkeys — desktop preview only
 
